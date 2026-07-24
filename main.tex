@@ -1,0 +1,141 @@
+%==============================================================================
+%  Transfer of Status
+%  "Scaling De Novo Design of Protein Nanoparticle Vaccines"
+%  Lorenzo Tarricone -- University of Oxford, Department of Statistics
+%
+%  Compile with pdfLaTeX + Biber:
+%      latexmk -pdf main.tex
+%  (On Overleaf: Menu -> Compiler -> pdfLaTeX; it auto-runs Biber.)
+%
+%  NOTE: references.bib currently contains two DUPLICATE citation keys
+%  (li_robust_2026 and lee_four-component_2025, each defined twice).
+%  Delete one entry of each pair before the first compile -- see README.md.
+%==============================================================================
+\documentclass[11pt,a4paper]{report}
+
+%------------------------------- Encoding & fonts -----------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage{microtype}
+
+%------------------------------- Page geometry --------------------------------
+\usepackage[a4paper,margin=2.7cm,headheight=14pt]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+%------------------------------- Maths & science ------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{siunitx}
+
+%------------------------------- Figures & tables -----------------------------
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{float}
+
+%------------------------------- Colour ---------------------------------------
+\usepackage{xcolor}
+\definecolor{oxfordblue}{RGB}{0,33,71}
+\definecolor{headinggrey}{RGB}{120,120,120}
+
+%------------------------------- Chapter heading style ------------------------
+% Recreates the example report's "N | Chapter Title" heading.
+\usepackage{titlesec}
+\titleformat{\chapter}[hang]
+  {\normalfont\Huge\bfseries}
+  {\thechapter\hspace{10pt}\textcolor{headinggrey}{\textbar}\hspace{10pt}}
+  {0pt}
+  {\Huge\bfseries}
+\titlespacing*{\chapter}{0pt}{-10pt}{30pt}
+
+%------------------------------- Running header -------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\scshape University of Oxford}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+% Match the plain style (chapter-opening pages) to the rest.
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[L]{\small\scshape University of Oxford}%
+  \fancyfoot[C]{\thepage}%
+  \renewcommand{\headrulewidth}{0.4pt}}
+
+%------------------------------- Gantt chart ----------------------------------
+\usepackage{pgfgantt}
+
+%------------------------------- Hyperlinks -----------------------------------
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={Scaling De Novo Design of Protein Nanoparticle Vaccines},
+  pdfauthor={Lorenzo Tarricone}}
+
+%------------------------------- Bibliography ---------------------------------
+% Author-year style (biblatex + biber), matching the confirmed preference.
+\usepackage[backend=biber,style=authoryear,maxcitenames=2,
+            giveninits=true,uniquename=init,sorting=nyt]{biblatex}
+\addbibresource{references.bib}
+
+%==============================================================================
+\begin{document}
+
+%------------------------------- Title page -----------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{1.5cm}
+
+  {\LARGE\bfseries Scaling De Novo Design of\\[4pt]
+   Protein Nanoparticle Vaccines\par}
+
+  \vspace{1.2cm}
+  {\Large\scshape Transfer of Status\par}
+
+  \vspace{2.0cm}
+  {\large Lorenzo Tarricone\par}
+
+  \vspace{2.0cm}
+  {\large Supervised by\par}
+  \vspace{0.3cm}
+  {\large Prof.\ Charlotte M.\ Deane\par}
+  {\normalsize Department of Statistics\par}
+  % TODO: add any co-supervisor(s) / assessors here, e.g.
+  % {\large Dr.\ Name Surname\par}{\normalsize Department\par}
+
+  \vfill
+
+  % TODO: replace with your college.
+  {\large \textit{College Name}\par}
+  \vspace{0.4cm}
+  {\large University of Oxford\par}
+  \vspace{0.4cm}
+  {\large Trinity Term 2026\par} % TODO: confirm the term/date
+
+  \vspace{1.5cm}
+\end{titlepage}
+
+%------------------------------- Front matter ---------------------------------
+\pagenumbering{roman}
+\setcounter{page}{1}
+\tableofcontents
+\clearpage
+
+%------------------------------- Body -----------------------------------------
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{sections/01_introduction}
+\input{sections/02_computational_design}
+\input{sections/03_methods}
+\input{sections/04_results_discussion}
+\input{sections/05_future_work}
+
+%------------------------------- References -----------------------------------
+\printbibliography[title=References]
+
+\end{document}

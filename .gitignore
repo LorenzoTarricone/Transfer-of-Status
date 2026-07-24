@@ -1,0 +1,25 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.synctex(busy)
+*.pdf
+main.pdf
+
+# Keep figure PDFs (they are inputs, not build output):
+!figures/*.pdf
+
+# Editor / OS
+.DS_Store
+*.swp
+.vscode/

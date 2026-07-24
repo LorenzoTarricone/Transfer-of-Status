@@ -1,0 +1,86 @@
+%==============================================================================
+% Chapter 2 -- Computational design of protein nanoparticle vaccines
+%==============================================================================
+\chapter{Computational design of protein nanoparticle vaccines}
+\label{ch:comp-design}
+
+% -----------------------------------------------------------------------------
+% This chapter expands the "Computational design of protein nanoparticles"
+% thread of the Design-CP paper's Related Work into a proper background section,
+% and then states the objective of the project. It is the pivot of the report:
+% it sets up why modelling the *whole assembly* end to end is the enabling first
+% step, which is exactly the premise of the Design-CP work reported in
+% Chapters 3-4.
+% -----------------------------------------------------------------------------
+
+\section{Current methods}
+\label{sec:current-methods}
+
+State-of-the-art design of protein nanoparticles follows a two-stage
+``dock-and-design'' recipe inherited from the Rosetta era. First, symmetric
+oligomeric building blocks are rigidly docked into a target point-group
+architecture (for example a tetrahedron, octahedron or icosahedron) so that their
+symmetry axes coincide with those of the target; second, the newly created
+subunit--subunit interfaces are redesigned to drive stable self-assembly. This
+programme produced the first self-assembling protein nanomaterials with
+atomic-level accuracy \parencite{king_computational_2012}, its multi-component
+extension \parencite{king_accurate_2014}, megadalton-scale two-component
+icosahedral complexes such as I53-50 \parencite{bale_accurate_2016} and the
+hyperstable 60-subunit icosahedron I3-01 \parencite{hsia_design_2016}, building on
+symmetric self-assembly principles established earlier
+\parencite{padilla_nanohedra_2001}. Machine learning has since accelerated the
+generation of building blocks and the design of interfaces: symmetric assemblies
+have been produced by hallucination
+\parencite{wickyHallucinatingSymmetricProtein2022}, interfaces are now routinely
+designed with ProteinMPNN \parencite{de_haas_rapid_2024}, and the building blocks
+themselves are drawn from AlphaFold2-predicted structures
+\parencite{haas_sequence_2025} or generated de novo with RFdiffusion
+\parencite{haas_novo_2026}. Related advances extend the repertoire to
+pseudosymmetric and multi-component cages
+\parencite{dowlingHierarchicalDesignPseudosymmetric2025,
+rankovicComputationalDesignBifaceted2025,lee_four-component_2025,kibler_design_2024}.
+
+Despite this progress, essentially all of these pipelines share a structural
+limitation: they still rely on a \emph{rigid-body docking step} over a library of
+pre-computed oligomers. The building blocks are designed, or predicted, in
+isolation and are only afterwards assembled by a search over rigid poses. The
+inter-subunit interfaces---the very interactions that determine whether, and how
+well, a particle assembles---are therefore never generated jointly with the rest
+of the structure. A natural next step is to remove the docking stage altogether
+and model the entire assembly, including all of its inter-subunit interfaces, with
+a single generative network.
+
+
+\section{Objective of our project}
+\label{sec:objective}
+
+The objective of this project is to marry the fully protein-based nanoparticle
+vaccine platform of Chapter~\ref{ch:introduction} with the generative-modelling
+capabilities of Chapter~\ref{sec:protein-design}: to design protein nanoparticle
+vaccines \emph{end to end}, as whole assemblies, with a single all-atom generative
+model rather than a docking pipeline over independently designed parts. In the
+longer term (Chapter~\ref{ch:future-work}) this means \emph{conditional} design---
+scaffolding a chosen antigen onto a self-assembling particle---but that ambition
+rests on a prerequisite that turns out to be non-trivial.
+
+\paragraph{The enabling first step: modelling the whole assembly.}
+Before one can condition generation on a displayed antigen, one must first be able
+to \emph{model the whole assembly at all}. All-atom generative models can, in
+principle, design a large multimeric complex by jointly denoising every chain and
+every atom; in practice, their quadratic token-pair and atom-pair representations
+exhaust the memory of a single GPU as the number of subunits and residues grows.
+A full icosahedral particle---sixty chains and many thousands of residues---simply
+does not fit. This memory ceiling is the reason the field still falls back on
+docking pre-computed oligomers rather than generating the assembly directly.
+
+This report addresses exactly that bottleneck. Building on the all-atom model
+RFdiffusion3 \parencite{butcher_novo_2025}, we borrow \emph{context parallelism}
+from large-language-model and structure-prediction systems
+\parencite{lin_fold-cp_2026,dao_flashattention_2022} to distribute the quadratic
+activations across a multi-GPU mesh, so that the full assembly can be denoised in a
+single trajectory. The result---presented in Chapters~\ref{ch:methods}
+and~\ref{ch:results}---is, to our knowledge, the first end-to-end, all-atom
+generative design of symmetric protein assemblies that models the full set of
+inter-subunit interactions without an intermediate docking step. Establishing that
+we can reliably model the whole assembly is the premise on which every subsequent
+research direction in this report is built.

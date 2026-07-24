@@ -1,0 +1,139 @@
+%==============================================================================
+% Chapter 1 -- Introduction
+%==============================================================================
+\chapter{Introduction}
+\label{ch:introduction}
+
+% -----------------------------------------------------------------------------
+% This chapter is deliberately broad: it motivates protein nanoparticle vaccines
+% as a vaccine platform, and then traces protein design from its physics-based
+% origins to the current machine-learning revolution. The two threads meet in
+% Chapter 2, where we ask how modern generative models can design these vaccines
+% end to end.
+% -----------------------------------------------------------------------------
+
+\section{Protein nanoparticle vaccines}
+\label{sec:pnp-vaccines}
+
+The clinical success of mRNA vaccines during the SARS-CoV-2 pandemic established
+nucleic-acid delivery as a fast, programmable vaccine modality: an antigen can be
+encoded, manufactured and deployed within weeks of a genomic sequence becoming
+available.
+% TODO [FLAG A]: cite a foundational mRNA-vaccine reference here
+% (e.g. Pardi et al. 2018 "mRNA vaccines - a new era in vaccinology",
+%  and/or Polack et al. 2020, BNT162b2). These are NOT yet in references.bib;
+%  add them to the .bib and replace this comment with a \parencite{...}.
+Nevertheless, a bare secreted antigen is often weakly immunogenic, and mRNA
+formulations face practical constraints around cold-chain storage, transient and
+variable expression, and reactogenicity.
+
+A complementary strategy is to present the antigen not as a soluble monomer but
+arrayed on the surface of a self-assembling \emph{protein nanoparticle}. By
+displaying many copies of an antigen in a dense, repetitive, virus-like geometry,
+these immunogens crosslink B-cell receptors and engage the immune system far more
+potently than the corresponding soluble antigen. Designed nanoparticle vaccines
+have elicited markedly stronger and more durable neutralising-antibody responses
+across several pathogens, including SARS-CoV-2
+\parencite{walls_elicitation_2020} and respiratory syncytial virus
+\parencite{marcandalliInductionPotentNeutralizing2019a}, and multivalent designed
+immunogens have conferred protection in animal models
+\parencite{hunt_multivalent_2022}. Natural and engineered self-assembling
+scaffolds such as lumazine synthase provide versatile platforms for multivalent,
+cross-protective antigen presentation
+\parencite{ladenstein_second_2020,joseph_lumazine_2025}, and the broader
+engineering of self-assembling protein nanoparticles for therapeutic delivery is
+now an active field \parencite{olshefskyEngineeringSelfAssemblingProtein2022,
+divine_designed_2021}.
+
+Crucially, because the scaffold is itself a protein, the nanoparticle and its
+displayed antigen can be genetically encoded and delivered as a single mRNA
+construct, so that the immunogen self-assembles \emph{in vivo}. This
+``mRNA-launched'' route combines the manufacturing speed of nucleic-acid vaccines
+with the superior immunogenicity of particulate display, and computationally
+designed mRNA-launched nanoparticle immunogens have been shown to elicit
+protective antibody and T-cell responses in mice
+\parencite{hendricks_computationally_2025}. The vaccine platform we target in this
+work is therefore \emph{fully protein based}: a design goal that, as we argue in
+Chapter~\ref{ch:comp-design}, is unusually well matched to the capabilities of
+modern generative protein models.
+
+The appeal of symmetric protein assemblies as scaffolds is not accidental. Nature
+routinely builds functional machinery from symmetric, self-assembling protein
+subunits---from icosahedral viral capsids
+\parencite{twarock_structural_2019} to bacterial microcompartments and
+protein-based organelles \parencite{yeates_protein-based_2008} and even engineered
+assemblies that encapsulate their own genome
+\parencite{butterfield_evolution_2017}. Symmetry lets a large, robust container be
+built from a small number of distinct parts, which is exactly the property that
+makes these architectures attractive both to evolution and to the protein
+designer.
+
+% Suggested figure: a schematic contrasting (i) soluble antigen, (ii) nanoparticle
+% display, and (iii) mRNA-launched self-assembly. Drop the file in figures/ and
+% uncomment.
+% \begin{figure}[t]
+%   \centering
+%   \includegraphics[width=\linewidth]{fig_nanoparticle_vaccine_schematic.pdf}
+%   \caption{From soluble antigen to mRNA-launched nanoparticle display.}
+%   \label{fig:pnp-schematic}
+% \end{figure}
+
+
+\section{Protein design}
+\label{sec:protein-design}
+
+Designing the scaffolds described above is a protein-design problem: we must
+specify an amino-acid sequence that folds into, and assembles into, a prescribed
+three-dimensional architecture. This section sketches how the field has moved from
+physics-based methods to today's machine-learning approaches.
+
+\subsection{Physics-based design}
+\label{subsec:physics-design}
+
+The first generation of computational protein design was grounded in biophysics:
+candidate sequences were threaded onto a target backbone and scored with an
+energy function approximating the physics of folding, with the conformational and
+sequence search handled by algorithms such as those in the Rosetta suite. This
+paradigm produced landmark results, including de novo enzymes for reactions with
+no natural catalyst \parencite{rothlisberger_kemp_2008,siegel_computational_2010}.
+For assemblies specifically, symmetry was exploited explicitly: symmetric docking
+principles \parencite{padilla_nanohedra_2001} were combined with atomic-level
+interface design to produce self-assembling protein nanomaterials
+\parencite{king_computational_2012}, co-assembling multi-component nanomaterials
+\parencite{king_accurate_2014}, megadalton-scale two-component icosahedra
+\parencite{bale_accurate_2016} and hyperstable 60-subunit cages
+\parencite{hsia_design_2016}, supported by fast sequence-independent docking tools
+for nanomaterial design \parencite{sheffler_fast_2023}. These methods work, but
+they are laborious: they depend on hand-curated building blocks, expert-tuned
+energy terms and extensive filtering.
+% TODO [FLAG B, optional]: to anchor the origin of physics-based de novo design
+% you may wish to add Kuhlman et al. 2003 ("Design of a novel globular protein
+% fold with atomic-level accuracy"). Not currently in references.bib.
+
+\subsection{The machine-learning revolution in de novo design}
+\label{subsec:ml-design}
+
+The accuracy revolution in protein \emph{structure prediction}---AlphaFold2
+\parencite{jumperHighlyAccurateProtein2021}, RoseTTAFold
+\parencite{baekAccuratePredictionProtein2021} and, more recently, the all-atom
+biomolecular model AlphaFold3 \parencite{abramsonAccurateStructurePrediction2024}
+---transformed what is computationally tractable, and it was quickly followed by an
+analogous revolution in \emph{generative} design. Deep generative models now
+propose novel backbones directly: denoising-diffusion models such as RFdiffusion
+\parencite{watsonNovoDesignProtein2023} and the programmable generative model
+Chroma \parencite{ingrahamIlluminatingProteinSpace2023}, together with a rapidly
+growing family of backbone and all-atom generators
+\parencite{lin_generating_2023,lin_out_2024,linFastUltraCapableProtein2026,
+geffner_proteina_2025}, and the recent all-atom RFdiffusion3
+\parencite{butcher_novo_2025}. Sequences for these backbones are supplied by
+learned inverse-folding models such as ProteinMPNN
+\parencite{dauparasRobustDeepLearning2022}. The reach of this toolkit is
+illustrated by de novo binders \parencite{cao_novo_2020,vazquez_torres_novo_2024},
+atomically accurate designed antibodies \parencite{bennett_atomically_2026} and de
+novo enzymes \parencite{yeh_novo_2023}; recent reviews chart the trajectory of the
+field \parencite{yang_past_2026}.
+
+The central premise of this report is that these two threads---a fully
+protein-based vaccine platform, and a generative toolkit powerful enough to design
+proteins from scratch---are ready to be brought together. The next chapter makes
+that case precise.

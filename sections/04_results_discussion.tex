@@ -1,0 +1,164 @@
+%==============================================================================
+% Chapter 4 -- Results and discussion
+%==============================================================================
+\chapter{Results and discussion}
+\label{ch:results}
+
+% -----------------------------------------------------------------------------
+% Adapted from Section 4 of the Design-CP paper. Figure/table placeholders below
+% point at files you should export from the paper into figures/. Every numerical
+% value carries a "% TODO: confirm" where I could not be fully certain of the
+% exact figure -- reconcile each against the paper before submission.
+% -----------------------------------------------------------------------------
+
+We now show that Design-CP makes it possible to design whole symmetric
+nanoparticles end to end, characterise how it scales with the number of GPUs, and
+demonstrate that---under strong symmetry---the approach is even feasible on
+commodity hardware. We close with a discussion of its limitations.
+
+\section{Design quality and symmetry}
+\label{sec:design-quality}
+
+Because context parallelism is an inference-only reparametrisation, it does not
+change the model's weights, but it does let us sample systems far larger than
+RFD3's native training crop (of order a few hundred tokens and a few thousand
+atoms). % TODO: confirm the exact native crop (paper reports ~384 tokens / 5000 atoms).
+Operating beyond that crop is out of distribution, and for low-symmetry targets it
+can degrade sample quality: a single $\sim$10{,}800-residue monomer generated in
+this regime looks unnatural (Figure~\ref{fig:large-designs}). Imposing a
+point-group symmetry at the same system size restores protein-like structure,
+because---as described in Section~\ref{sec:rfd3-symmetry}---resymmetrisation
+collapses the effective degrees of freedom to a single ASU and couples the
+subunits, shrinking the design space the model must navigate. Symmetry is thus not
+only the biological property we want in a vaccine scaffold but also the very thing
+that makes large-assembly generation tractable and well-behaved.
+
+\begin{figure}[t]
+  \centering
+  % TODO: export Figure 1 from the Design-CP paper into figures/.
+  % \includegraphics[width=\linewidth]{fig1_large_designs.pdf}
+  \fbox{\parbox[c][4.5cm][c]{0.9\linewidth}{\centering\itshape
+    Placeholder -- Design-CP sharding schematic (1D vs 2D) and qualitative
+    comparison of large designs with and without an imposed symmetry.}}
+  \caption{Symmetric design with Design-CP. \textbf{(a)} the 1D row-sharding and
+    2D grid schemes, each square denoting a sub-tensor of the attention matrix
+    assigned to one device. \textbf{(b)} qualitative comparison of large designs:
+    without symmetry, samples that exceed the native crop degrade; a point-group
+    prior mitigates this at the same system size.}
+  \label{fig:large-designs}
+\end{figure}
+
+\section{Designing icosahedral nanoparticles}
+\label{sec:icosahedral}
+
+Using the 2D scheme on a $2\times2$ grid of $95\,\text{GB}$ data-center GPUs,
+% TODO: confirm the exact GPU model reported in the paper.
+we generated $n{=}40$ icosahedral nanoparticles---$60$ chains of $210$ residues
+each, i.e.\ $12{,}600$ residues per particle---together with a paired control of
+$n{=}40$ single-chain $210$-residue monomers produced by vanilla single-GPU RFD3.
+We benchmark against lumazine synthase (PDB~1NQX), a natural icosahedral particle
+used as a vaccine scaffold \parencite{joseph_lumazine_2025,ladenstein_second_2020}.
+On per-chain backbone-sanity metrics the Design-CP chains broadly match the vanilla
+RFD3 monomers, with a somewhat heavier tail of clash and deviation outliers; the
+symmetry-aware interface metrics track the 1NQX baseline (contacts per interface,
+minimum inter-chain distances), although a fraction of designs still show steric
+overlaps at the interfaces (Figure~\ref{fig:icosahedral}). These results
+establish the central feasibility claim of the project: a full icosahedral
+assembly can be denoised in a single trajectory, interfaces included, with no
+docking step.
+
+\begin{figure}[t]
+  \centering
+  % TODO: export Figure 2 from the Design-CP paper into figures/.
+  \fbox{\parbox[c][4.5cm][c]{0.9\linewidth}{\centering\itshape
+    Placeholder -- icosahedral designs vs vanilla RFD3 monomers and the 1NQX
+    baseline: per-chain and symmetry-aware interface metrics.}}
+  \caption{Designing icosahedral nanoparticles with Design-CP ($n{=}40$,
+    $60\times210=12{,}600$ residues), compared against $n{=}40$ single-GPU RFD3
+    monomers and the lumazine-synthase reference (PDB~1NQX).}
+  \label{fig:icosahedral}
+\end{figure}
+
+\section{Scaling: maximum ASU size and inference time vs.\ number of GPUs}
+\label{sec:scaling}
+
+To characterise the memory ceiling we swept the ASU length until out-of-memory for
+each GPU count $P$, under icosahedral symmetry, for both schemes
+(Table~\ref{tab:scaling}). The maximum feasible ASU length grows with the expected
+$\sqrt{P}$ trend: distributing the quadratic pair tensor over $P$ devices buys a
+linear reduction in per-device pair memory, hence a square-root increase in the
+side length that fits. The 2D scheme achieves better wall-clock scaling than 1D
+(often on the order of $2\times$ faster at matched size), because its ring
+communication overlaps with compute and is restricted to $\sqrt{P}$-sized
+subgroups, whereas the 1D scheme pays a global \texttt{ALLGATHER} per block.
+
+\begin{table}[t]
+  \centering
+  \caption{Scaling of Design-CP under icosahedral symmetry: maximum ASU length
+    before OOM and wall-clock time at that maximum, for the 1D and 2D schemes.
+    Capacity ratio $=L^{\text{2D}}_{\max}/L^{\text{1D}}_{\max}$; speedup
+    $=t^{\text{1D}}/t^{\text{2D}}$. % TODO: fill values from the paper's Table 1.}
+  \label{tab:scaling}
+  \begin{tabular}{@{}rcccccc@{}}
+    \toprule
+    $P$ & $L^{\text{1D}}_{\max}$ & $t^{\text{1D}}$ & $L^{\text{2D}}_{\max}$ &
+    $t^{\text{2D}}$ & capacity ratio & speedup \\
+    \midrule
+    1  & -- & -- & -- & -- & -- & -- \\
+    4  & -- & -- & -- & -- & -- & -- \\
+    9  & -- & -- & -- & -- & -- & -- \\
+    16 & -- & -- & -- & -- & -- & -- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Designing octahedral nanoparticles on commodity GPUs}
+\label{sec:octahedral}
+
+Finally, we show that strong symmetry makes large-assembly design feasible even on
+workstation-grade hardware. On $16$ NVIDIA RTX~A4000 GPUs ($16\,\text{GB}$ each,
+roughly $6\times$ less per-device memory than the data-center parts above) we
+generated full octahedral assemblies of $24$ chains of $\sim$178 residues
+($\sim$4{,}270 residues total; $n{=}12$).
+% TODO: confirm exact residues/chain (paper figures give 176 vs 178).
+The designs show healthy backbone-sanity distributions and well-formed
+symmetric interfaces (Figure~\ref{fig:octahedral}), illustrating how Design-CP can
+be a practical path towards democratising large-assembly protein design rather than
+a technique restricted to large clusters.
+
+\begin{figure}[t]
+  \centering
+  % TODO: export Figure 3 from the Design-CP paper into figures/.
+  \fbox{\parbox[c][4.5cm][c]{0.9\linewidth}{\centering\itshape
+    Placeholder -- representative octahedral assembly on 16$\times$16\,GB GPUs,
+    with backbone-sanity and interface metrics ($n{=}12$).}}
+  \caption{Designing octahedral nanoparticles on workstation-grade GPUs: a
+    representative $24$-chain assembly generated on $16$ RTX~A4000 ($16\,$GB) GPUs,
+    with per-chain and interface metrics.}
+  \label{fig:octahedral}
+\end{figure}
+
+\section{Discussion}
+\label{sec:discussion}
+
+Design-CP reframes symmetric nanoparticle design as the joint denoising of all
+atoms of all subunits, and of their inter-subunit interfaces, within a single
+generative trajectory---replacing the rigid-body docking of independently designed
+oligomers that has defined the field
+(Section~\ref{sec:current-methods}). The two schemes trade implementation
+complexity against efficiency: 1D is simple and kernel-free, 2D is more involved
+but scales better in wall-clock time. Both are model-agnostic in principle---any
+generative model with attention and an $\mathcal{O}(n^2)$ pair representation could
+adopt them.
+
+The main limitation follows directly from the design choice of keeping the weights
+frozen: pushing beyond the native training crop is out of distribution, and for
+weakly symmetric or asymmetric targets this causes quality to degrade
+(Section~\ref{sec:design-quality}), while even for symmetric designs a fraction of
+particles retain steric clashes at their interfaces. Two lines of work follow.
+Methodologically, incorporating context parallelism into the \emph{training} loop
+(longer-context training) would move the large-assembly regime back in
+distribution. Empirically, the in-silico metrics reported here are necessary but
+not sufficient: experimental (in-vitro) expression and assembly validation is the
+essential next check on whether these designs fold and assemble as intended. The
+research programme in Chapter~\ref{ch:future-work} builds on this foundation.
