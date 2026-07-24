@@ -1,0 +1,75 @@
+%==============================================================================
+% Appendix -- Extended in-silico metrics
+%==============================================================================
+\chapter{Extended in-silico metrics}
+\label{app:extended}
+
+This appendix collects the full metric distributions summarised in
+Chapter~\ref{ch:results}. Each box plot shows the median, interquartile range and
+whiskers over the design set, with the lumazine-synthase reference
+(PDB~1NQX, dotted) shown where applicable.
+
+\section{Icosahedral designs}
+\label{app:ico}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{RFD3-vs-DesignCP.png}
+  \caption{Per-chain standard (backbone-sanity) metrics for the icosahedral
+    Design-CP designs (I60, $n{=}40$) against single-GPU RFD3 monomers ($n{=}40$)
+    and the 1NQX reference --- the full version of
+    Figure~\ref{fig:icosahedral}\textbf{b--e}.}
+  \label{fig:ico-perchain}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{Icosahedral_designability_metric_ASU.png}
+  \caption{Full designability (backbone-sanity) distributions for the icosahedral
+    I60 designs ($n{=}40$), including radius of gyration.}
+  \label{fig:ico-des}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{Icosahedral_symmetry_metrics_extra.png}
+  \caption{Additional symmetry-aware interface metrics for the icosahedral I60
+    designs ($n{=}40$), extending Figure~\ref{fig:icosahedral}\textbf{g--l}.}
+  \label{fig:ico-symm}
+\end{figure}
+
+\clearpage
+\section{Octahedral designs}
+\label{app:oct}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{Octahedral_designability_metrics.png}
+  \caption{Full designability (backbone-sanity) distributions for the octahedral
+    O24 designs ($n{=}12$).}
+  \label{fig:oct-des}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{Octahedral_symmetry_metrics.png}
+  \caption{Full symmetry-aware interface metric distributions for the octahedral
+    O24 designs ($n{=}12$).}
+  \label{fig:oct-symm}
+\end{figure}
+
+\clearpage
+\section{Effect of removing the symmetry constraint}
+\label{app:monstromers}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{Monstromers.png}
+  \caption{Six Design-CP samples at the icosahedral system size ($60$ chains
+    $\times\,210$ residues $=12{,}600$ residues) generated \emph{without} a
+    point-group symmetry constraint. Compared with the well-formed icosahedral
+    particles of Figure~\ref{fig:icosahedral}, the unconstrained assemblies are
+    malformed and non-globular, illustrating why the symmetry prior is essential in
+    this beyond-crop regime.}
+  \label{fig:monstromers}
+\end{figure}

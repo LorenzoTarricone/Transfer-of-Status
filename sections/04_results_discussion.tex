@@ -31,20 +31,25 @@ because---as described in Section~\ref{sec:rfd3-symmetry}---resymmetrisation
 collapses the effective degrees of freedom to a single ASU and couples the
 subunits, shrinking the design space the model must navigate. Symmetry is thus not
 only the biological property we want in a vaccine scaffold but also the very thing
-that makes large-assembly generation tractable and well-behaved.
+that makes large-assembly generation tractable and well-behaved. Conversely,
+removing the point-group constraint at the icosahedral system size ($60$ chains
+$\times\,210$ residues) yields malformed, non-globular assemblies
+(Appendix~\ref{app:extended}, Figure~\ref{fig:monstromers}).
 
 \begin{figure}[t]
   \centering
-  % TODO: export Figure 1 from the Design-CP paper into figures/.
-  % \includegraphics[width=\linewidth]{fig1_large_designs.pdf}
-  \fbox{\parbox[c][4.5cm][c]{0.9\linewidth}{\centering\itshape
-    Placeholder -- Design-CP sharding schematic (1D vs 2D) and qualitative
-    comparison of large designs with and without an imposed symmetry.}}
-  \caption{Symmetric design with Design-CP. \textbf{(a)} the 1D row-sharding and
-    2D grid schemes, each square denoting a sub-tensor of the attention matrix
-    assigned to one device. \textbf{(b)} qualitative comparison of large designs:
-    without symmetry, samples that exceed the native crop degrade; a point-group
-    prior mitigates this at the same system size.}
+  \includegraphics[width=\textwidth]{Figure_1.png}
+  \caption{\textbf{Symmetric design with Design-CP.}
+    \textbf{(a)} Standard single-device attention versus the 1D row-sharding and
+    2D grid context-parallel schemes; each square is a sub-tensor of the token pair
+    representation $Z$ (equivalently the attention matrix), coloured by the GPU that
+    owns it. 1D partitions the query ($Q$) rows across devices, while 2D tiles both
+    the query and key ($K$) dimensions over a device grid.
+    \textbf{(b)} All-atom designs sampled beyond RFD3's native crop: an
+    unconstrained monomer collapses into an unnatural globule, whereas imposing a
+    point-group symmetry (cyclic $C_5$, dihedral $D_5$, tetrahedral $T$,
+    octahedral $O$, icosahedral $I$) at the same system size yields protein-like
+    assemblies.}
   \label{fig:large-designs}
 \end{figure}
 
@@ -69,13 +74,19 @@ docking step.
 
 \begin{figure}[t]
   \centering
-  % TODO: export Figure 2 from the Design-CP paper into figures/.
-  \fbox{\parbox[c][4.5cm][c]{0.9\linewidth}{\centering\itshape
-    Placeholder -- icosahedral designs vs vanilla RFD3 monomers and the 1NQX
-    baseline: per-chain and symmetry-aware interface metrics.}}
-  \caption{Designing icosahedral nanoparticles with Design-CP ($n{=}40$,
-    $60\times210=12{,}600$ residues), compared against $n{=}40$ single-GPU RFD3
-    monomers and the lumazine-synthase reference (PDB~1NQX).}
+  \includegraphics[width=\textwidth]{Figure_2.png}
+  \caption{\textbf{Designing icosahedral nanoparticles with Design-CP}
+    ($n{=}40$; $60$ chains $\times\,210$ residues $=12{,}600$ residues).
+    \textbf{(a)} A single asymmetric subunit (ASU, red) and its neighbouring
+    subunits (teal) on the icosahedral shell.
+    \textbf{(b--e)} Per-chain backbone-sanity metrics for the icosahedral designs
+    (I60) versus $n{=}40$ single-GPU RFD3 monomers, with the lumazine-synthase
+    reference (PDB~1NQX, dotted).
+    \textbf{(f)} A selected design with a zoom on an inter-ASU interface annotated
+    with C$\alpha$--C$\alpha$ distances.
+    \textbf{(g--l)} Symmetry-aware interface metrics against the 1NQX baseline.
+    Full distributions are reported in Appendix~\ref{app:extended}
+    (Figures~\ref{fig:ico-perchain}--\ref{fig:ico-symm}).}
   \label{fig:icosahedral}
 \end{figure}
 
@@ -129,13 +140,14 @@ a technique restricted to large clusters.
 
 \begin{figure}[t]
   \centering
-  % TODO: export Figure 3 from the Design-CP paper into figures/.
-  \fbox{\parbox[c][4.5cm][c]{0.9\linewidth}{\centering\itshape
-    Placeholder -- representative octahedral assembly on 16$\times$16\,GB GPUs,
-    with backbone-sanity and interface metrics ($n{=}12$).}}
-  \caption{Designing octahedral nanoparticles on workstation-grade GPUs: a
-    representative $24$-chain assembly generated on $16$ RTX~A4000 ($16\,$GB) GPUs,
-    with per-chain and interface metrics.}
+  \includegraphics[width=\textwidth]{Octahedral_figure_main_text.png}
+  \caption{\textbf{Designing octahedral nanoparticles on workstation-grade GPUs.}
+    \textbf{(a)} A representative $24$-chain octahedral assembly generated on
+    $16$ NVIDIA RTX~A4000 ($16\,$GB) GPUs.
+    \textbf{(b--g)} Per-chain backbone-sanity and symmetry-aware interface metrics
+    over the $n{=}12$ designs. Full metric distributions are given in
+    Appendix~\ref{app:extended}
+    (Figures~\ref{fig:oct-des} and~\ref{fig:oct-symm}).}
   \label{fig:octahedral}
 \end{figure}
 
