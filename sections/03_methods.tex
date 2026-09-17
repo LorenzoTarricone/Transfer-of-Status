@@ -52,8 +52,8 @@ default $90\%$) the model \emph{resymmetrises}: it extracts a single asymmetric
 subunit (ASU), regenerates the remaining subunits by applying the point-group
 operations, and feeds the symmetrised complex back into the loop. Two consequences
 matter for us. First, the effective degrees of freedom collapse to a single ASU,
-so the design space---and, empirically, the difficulty of producing protein-like
-structure at large system sizes---shrinks dramatically. Second, the model still
+so the design space, and (empirically) the difficulty of producing protein-like
+structure at large system sizes, shrinks dramatically. Second, the model still
 attends over the full complex, so the quadratic memory cost is incurred in full;
 symmetry constrains the \emph{output} but not the \emph{activation size}. This is
 precisely the regime in which context parallelism pays off.
@@ -71,8 +71,8 @@ queries and the full set of keys and values, followed by a single
 a globally consistent state. RFD3 has no MSA track and no triangular-attention
 operations, which is what makes this simpler 1D scheme viable (their absence is
 what forces more elaborate schemes in structure-prediction models). Full
-implementation details---chunk distribution, communication-volume accounting and
-determinism guards---are deferred to the appendix.
+implementation details (chunk distribution, communication-volume accounting and
+determinism guards) are deferred to the appendix.
 
 \section{Design-CP 2D grid context parallelism}
 \label{sec:cp-2d}
@@ -99,10 +99,10 @@ atom attention, and determinism boundaries), again detailed in the appendix.
 Because both schemes are \emph{inference-only} reparametrisations of a fixed model,
 we evaluate the generated assemblies rather than any retrained network. We report
 two families of in-silico metrics. \emph{Backbone-sanity} (per-chain designability)
-metrics quantify whether each chain is a plausible protein---chain breaks, backbone
+metrics quantify whether each chain is a plausible protein: chain breaks, backbone
 clashes, non-loop (secondary-structure) fraction, maximum C$\alpha$ deviation, and
 secondary-structure composition. \emph{Symmetry-aware interface} metrics quantify
-whether the subunits assemble sensibly---per-ASU clashes, mean contacts per
+whether the subunits assemble sensibly: per-ASU clashes, mean contacts per
 interface, minimum inter-chain distance, and the number of interfaces that make
 contact. Where a natural reference particle is available we benchmark against it;
 for icosahedral designs we use lumazine synthase (PDB~1NQX), a natural icosahedral

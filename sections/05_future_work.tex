@@ -21,7 +21,7 @@ a little wider.
 
 Design-CP as reported performs \emph{unconditional} generation: it produces a
 symmetric particle, but not a particle built around a \emph{specific} antigen. The
-natural next step is \emph{conditional} generation---holding one or more functional
+natural next step is \emph{conditional} generation, holding one or more functional
 motifs (the antigen, or an epitope we wish to display) fixed while the model
 designs a symmetric scaffold that presents them. In the symmetric setting this is
 \emph{symmetric motif scaffolding}: the standard motif-scaffolding problem
@@ -41,7 +41,7 @@ pipelines for validating conditionally designed immunogens.
 \label{sec:shape-control}
 
 A second direction is to gain finer control over the \emph{shape} of the generated
-proteins and assemblies---their overall size, envelope and geometry---independently
+proteins and assemblies (their overall size, envelope and geometry) independently
 of, or jointly with, the motif constraint. Existing generative models already offer
 some spatial and shape conditioning: Chroma exposes programmable shape and
 symmetry constraints \parencite{ingrahamIlluminatingProteinSpace2023}, ProtComposer
@@ -60,7 +60,7 @@ Section~\ref{sec:motif-scaffolding}.
 \label{sec:broad-agenda}
 
 More broadly, and over the remainder of the DPhil, I will continue to study the
-design of large---and often symmetric---protein assemblies as a subject in its own
+design of large, and often symmetric, protein assemblies as a subject in its own
 right. Doing this well requires understanding, and learning to design for, the
 factors that govern whether subunits actually come together: specific
 protein--protein interactions at the designed interfaces, the thermodynamics and
@@ -71,29 +71,39 @@ The space of targets is correspondingly wide, from vaccine scaffolds to
 mechanically coupled molecular machines \parencite{courbet_computational_2022} and
 allosterically switchable assemblies \parencite{pillai_novo_2024}. This is the
 outermost ring of the funnel: a general research direction that the concrete
-projects above both feed into and help define.
+projects above both feed into and help define.\\
+
+\textbf{Could also mention a few of my early results of the spatial/shape conditioning here?? Just to show that I know where I am going for the next few months??}
 
 \section{Timeline and milestones}
 \label{sec:gantt}
 
-Figure~\ref{fig:gantt} summarises the plan on a single timeline. The chart is a
-\texttt{pgfgantt} skeleton---edit the tasks, spans, and milestones to match your
-real dates before submission.
+Figure~\ref{fig:gantt} summarises the plan on a single timeline. The chart is a \texttt{pgfgantt} skeleton for now.
 
+\clearpage % put the Gantt chart on its own page so it can't overlap the text above
 \begin{figure}[H]
   \centering
-  \resizebox{\textwidth}{!}{%
+  \hspace*{-1.2cm}% shift the chart left (tweak as needed)
   \begin{ganttchart}[
       hgrid, vgrid,
+      x unit=1.45cm,
+      y unit title=0.6cm,
+      y unit chart=0.75cm,
+      title height=1,
       title/.append style={fill=oxfordblue!12},
-      title label font=\small\bfseries,
+      title label font=\footnotesize\bfseries,
       bar/.append style={fill=oxfordblue!75, rounded corners=1.5pt},
-      bar label font=\small,
+      bar height=0.55,
+      bar label font=\footnotesize,
+      bar label node/.append style={text width=5.2cm, align=right},
       group/.append style={fill=oxfordblue},
-      group label font=\small\bfseries,
+      group height=0.55,
+      group label font=\footnotesize\bfseries,
+      group label node/.append style={text width=5.2cm, align=right},
       milestone/.append style={fill=orange!85},
-      milestone label font=\small\itshape,
-      bar height=0.6,
+      milestone height=0.55,
+      milestone label font=\footnotesize\itshape,
+      milestone label node/.append style={text width=5.2cm, align=right},
       group right shift=0,
       group left shift=0,
     ]{1}{8}
@@ -103,25 +113,24 @@ real dates before submission.
     \gantttitle{Q1}{1}\gantttitle{Q2}{1}\gantttitle{Q3}{1}\gantttitle{Q4}{1}%
     \gantttitle{Q1}{1}\gantttitle{Q2}{1} \\
     % --- Foundation: whole-assembly modelling ---
-    \ganttgroup{Whole-assembly modelling}{1}{2} \\
+    \ganttgroup{Whole-assembly modelling}{1}{5} \\
     \ganttbar{Finalise Design-CP \& submit paper}{1}{2} \\
-    \ganttbar{Experimental (in-vitro) validation}{2}{5} \\
+    \ganttbar{Experimental (in-vitro) validation}{3}{5} \\
     % --- Conditional generation ---
-    \ganttgroup{Conditional generation}{3}{6} \\
-    \ganttbar{Symmetric motif scaffolding (Baker Lab visit)}{3}{6} \\
+    \ganttgroup{Conditional generation}{3}{8} \\
+    \ganttbar{Symmetric motif scaffolding\\(Baker Lab visit)}{3}{6} \\
+    \ganttbar{Test on real antigens\\(Baker Lab visit)}{6}{8} \\
     % --- Shape / spatial control ---
-    \ganttgroup{Shape \& spatial control}{4}{7} \\
-    \ganttbar{Improve spatial/shape conditioning}{4}{7} \\
+    \ganttgroup{Shape \& spatial control}{1}{4} \\
+    \ganttbar{Improve spatial/shape\\conditioning}{1}{4} \\
     % --- Broader agenda ---
     \ganttgroup{Large symmetric assemblies}{6}{8} \\
-    \ganttbar{PPIs \& thermodynamics of assembly}{6}{8} \\
+    \ganttbar{PPIs \& thermodynamics\\of assembly}{6}{8} \\
     \ganttbar{Thesis writing}{7}{8} \\
     % --- Milestones ---
     \ganttmilestone{Transfer of Status}{1} \\
     \ganttmilestone{Confirmation of Status}{5}
-  \end{ganttchart}%
-  }
-  \caption{Gantt chart of upcoming milestones and deadlines (illustrative;
-    \textbf{TODO}: replace tasks and dates with your own).}
+  \end{ganttchart}
+  \caption{Gantt chart of upcoming milestones and deadlines}
   \label{fig:gantt}
 \end{figure}

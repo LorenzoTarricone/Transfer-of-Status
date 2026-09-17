@@ -13,7 +13,7 @@
 
 We now show that Design-CP makes it possible to design whole symmetric
 nanoparticles end to end, characterise how it scales with the number of GPUs, and
-demonstrate that---under strong symmetry---the approach is even feasible on
+demonstrate that, under strong symmetry, the approach is even feasible on
 commodity hardware. We close with a discussion of its limitations.
 
 \section{Design quality and symmetry}
@@ -27,7 +27,7 @@ Operating beyond that crop is out of distribution, and for low-symmetry targets 
 can degrade sample quality: a single $\sim$10{,}800-residue monomer generated in
 this regime looks unnatural (Figure~\ref{fig:large-designs}). Imposing a
 point-group symmetry at the same system size restores protein-like structure,
-because---as described in Section~\ref{sec:rfd3-symmetry}---resymmetrisation
+because, as described in Section~\ref{sec:rfd3-symmetry}, resymmetrisation
 collapses the effective degrees of freedom to a single ASU and couples the
 subunits, shrinking the design space the model must navigate. Symmetry is thus not
 only the biological property we want in a vaccine scaffold but also the very thing
@@ -58,8 +58,8 @@ $\times\,210$ residues) yields malformed, non-globular assemblies
 
 Using the 2D scheme on a $2\times2$ grid of $95\,\text{GB}$ data-center GPUs,
 % TODO: confirm the exact GPU model reported in the paper.
-we generated $n{=}40$ icosahedral nanoparticles---$60$ chains of $210$ residues
-each, i.e.\ $12{,}600$ residues per particle---together with a paired control of
+we generated $n{=}40$ icosahedral nanoparticles ($60$ chains of $210$ residues
+each, i.e.\ $12{,}600$ residues per particle), together with a paired control of
 $n{=}40$ single-chain $210$-residue monomers produced by vanilla single-GPU RFD3.
 We benchmark against lumazine synthase (PDB~1NQX), a natural icosahedral particle
 used as a vaccine scaffold \parencite{joseph_lumazine_2025,ladenstein_second_2020}.
@@ -156,11 +156,11 @@ a technique restricted to large clusters.
 
 Design-CP reframes symmetric nanoparticle design as the joint denoising of all
 atoms of all subunits, and of their inter-subunit interfaces, within a single
-generative trajectory---replacing the rigid-body docking of independently designed
+generative trajectory, replacing the rigid-body docking of independently designed
 oligomers that has defined the field
 (Section~\ref{sec:current-methods}). The two schemes trade implementation
 complexity against efficiency: 1D is simple and kernel-free, 2D is more involved
-but scales better in wall-clock time. Both are model-agnostic in principle---any
+but scales better in wall-clock time. Both are model-agnostic in principle; any
 generative model with attention and an $\mathcal{O}(n^2)$ pair representation could
 adopt them.
 

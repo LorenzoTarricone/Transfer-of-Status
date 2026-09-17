@@ -1,6 +1,10 @@
 %==============================================================================
 % Chapter 1 -- Introduction
 %==============================================================================
+
+\textbf{NOTE: This is not a first draft yet; I just expanded a bit the content of the ICML workshop paper and added some extra bullet points for the introduction, future work and the Gantt chart. Need to adjust the citations too. Let me know if there are some important missing pieces.}
+
+
 \chapter{Introduction}
 \label{ch:introduction}
 
@@ -11,7 +15,9 @@
 % Chapter 2, where we ask how modern generative models can design these vaccines
 % end to end.
 % -----------------------------------------------------------------------------
-
+\section{Protein structure and/or Transformer architecture?}
+\textbf{I see a lot of people adding a paragraph with very basic knowledge about bio (usually what are proteins, their structure, etc...) or cs (what is a transformer, what is attention, etc...) is it always needed? 
+}
 \section{Protein nanoparticle vaccines}
 \label{sec:pnp-vaccines}
 
@@ -43,7 +49,7 @@ cross-protective antigen presentation
 \parencite{ladenstein_second_2020,joseph_lumazine_2025}, and the broader
 engineering of self-assembling protein nanoparticles for therapeutic delivery is
 now an active field \parencite{olshefskyEngineeringSelfAssemblingProtein2022,
-divine_designed_2021}.
+divine_designed_2021}.\\
 
 Crucially, because the scaffold is itself a protein, the nanoparticle and its
 displayed antigen can be genetically encoded and delivered as a single mRNA
@@ -59,7 +65,7 @@ modern generative protein models.
 
 The appeal of symmetric protein assemblies as scaffolds is not accidental. Nature
 routinely builds functional machinery from symmetric, self-assembling protein
-subunits---from icosahedral viral capsids
+subunits, from icosahedral viral capsids
 \parencite{twarock_structural_2019} to bacterial microcompartments and
 protein-based organelles \parencite{yeates_protein-based_2008} and even engineered
 assemblies that encapsulate their own genome
@@ -109,15 +115,15 @@ energy terms and extensive filtering.
 % TODO [FLAG B, optional]: to anchor the origin of physics-based de novo design
 % you may wish to add Kuhlman et al. 2003 ("Design of a novel globular protein
 % fold with atomic-level accuracy"). Not currently in references.bib.
+%TODO: Might also be helpful 
 
 \subsection{The machine-learning revolution in de novo design}
 \label{subsec:ml-design}
 
-The accuracy revolution in protein \emph{structure prediction}---AlphaFold2
+The accuracy revolution in protein \emph{structure prediction} that includes AlphaFold2
 \parencite{jumperHighlyAccurateProtein2021}, RoseTTAFold
 \parencite{baekAccuratePredictionProtein2021} and, more recently, the all-atom
-biomolecular model AlphaFold3 \parencite{abramsonAccurateStructurePrediction2024}
----transformed what is computationally tractable, and it was quickly followed by an
+biomolecular model AlphaFold3 \parencite{abramsonAccurateStructurePrediction2024} transformed what is computationally tractable, and it was quickly followed by an
 analogous revolution in \emph{generative} design. Deep generative models now
 propose novel backbones directly: denoising-diffusion models such as RFdiffusion
 \parencite{watsonNovoDesignProtein2023} and the programmable generative model
@@ -133,7 +139,6 @@ atomically accurate designed antibodies \parencite{bennett_atomically_2026} and 
 novo enzymes \parencite{yeh_novo_2023}; recent reviews chart the trajectory of the
 field \parencite{yang_past_2026}.
 
-The central premise of this report is that these two threads---a fully
-protein-based vaccine platform, and a generative toolkit powerful enough to design
-proteins from scratch---are ready to be brought together. The next chapter makes
+The central premise of this report is that these two threads (a fully
+protein-based vaccine platform, and a generative toolkit powerful enough to design proteins from scratch) are ready to be brought together. The next chapter makes
 that case precise.
