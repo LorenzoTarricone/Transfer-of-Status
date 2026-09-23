@@ -9,6 +9,85 @@ Chapter~\ref{ch:results}. Each box plot shows the median, interquartile range an
 whiskers over the design set, with the lumazine-synthase reference
 (PDB~1NQX, dotted) shown where applicable.
 
+\section{Metric definitions}
+\label{app:metric-defs}
+
+All quantities are computed directly from the generated all-atom coordinates of
+the symmetrised assembly; no external structure-prediction oracle is used. The
+metrics fall into two families.
+
+\paragraph{Backbone sanity.}
+\emph{Chain breaks} are consecutive C$\alpha$--C$\alpha$ pairs whose bond length
+departs from the canonical \SI{3.8}{\angstrom} by more than
+$\tau_\text{cb}=\SI{0.75}{\angstrom}$; pairs spanning an intended chain
+transition are masked out. The related \emph{maximum C$\alpha$ deviation} is the
+worst such departure in a design, reported as a continuous summary rather than a
+count. \emph{Backbone clashes} are heavy-atom pairs drawn from residues at least
+two apart in sequence and closer than $\tau_\text{clash}=\SI{1.5}{\angstrom}$,
+restricted to the backbone atoms $\{\text{N},\text{C}\alpha,\text{C}\}$, which
+have no rotameric freedom with which to relieve an overlap. The \emph{non-loop
+fraction} is the proportion of residues assigned to a helix or a strand by the
+P-SEA annotator \parencite{labesse_p-sea_1997}. We also report the radius of
+gyration and the amino-acid composition as secondary filters.
+
+\paragraph{Symmetric-interface sanity.}
+These use the full symmetrised complex, and all distances are
+C$\alpha$--C$\alpha$. Three thresholds apply: a hard inter-subunit clash distance
+of \SI{3.5}{\angstrom}, a contact band of \SIrange{4.0}{10.0}{\angstrom}, and a
+proximity cutoff of \SI{15.0}{\angstrom} beyond which two subunits count as
+non-interacting. \emph{ASU clashes} count inter-subunit pairs below the clash
+distance, normalised by the number of subunits so that the figure is comparable
+across point groups of different order. \emph{Mean contacts per interface}
+counts, for every pair of subunits within the proximity cutoff, the pairs falling
+inside the contact band, averaged over those interfaces. \emph{Minimum
+inter-chain distance} is the smallest such distance anywhere in the complex:
+values below roughly \SI{3.5}{\angstrom} indicate steric overlap, while values
+well above \SI{6}{\angstrom} indicate that the subunits never meet, which for a
+closed particle is itself a failure. The \emph{number of interfaces with
+contacts} flags assemblies in which one interface is effectively absent even
+though the mean is healthy.
+
+\section{Implementation notes}
+\label{app:implementation}
+
+\paragraph{Chunk distribution.}
+Device $p$ receives $I_p$ rows as in Equation~\eqref{eq:row-stripe}, starting at
+$p\lfloor I/P\rfloor + \min(p,\, I \bmod P)$. Uneven chunks are handled by padding
+each local tensor to the per-rank maximum before the collective and trimming the
+concatenated result back to $I$.
+
+\paragraph{Communication volume.}
+The dominant cost of the 1D scheme is the eighteen \texttt{ALLGATHER} calls on the
+token track issued by the diffusion transformer per recycling iteration, with two
+recycling iterations per denoising step. Each rank's message is sized by the token
+count and channel width and is therefore independent of $P$, so the term that
+grows with the device count is collective latency rather than payload.
+
+\paragraph{Determinism.}
+The two schemes reach determinism by different routes. In the 1D scheme the
+atom-to-token pooling uses an index reduction whose floating-point accumulation
+order depends on device scheduling, so ranks disagree slightly; because those
+pooled features become the keys and values of the following cross-attention, the
+discrepancy is amplified and breaks the requirement that all ranks hold identical
+keys and values. A single broadcast of the pooled features immediately after the
+reduction restores the invariant. The 2D scheme implements the same pooling as a
+distributed scatter-reduce collective, which is deterministic by construction and
+needs no broadcast. In both schemes the noised coordinates, the sampled noise and
+the denoised prediction are broadcast at each step boundary, so a given seed
+produces the same trajectory under either scheme.
+
+\paragraph{Distributed nearest neighbours.}
+The sparse atom attention needs the $k$ nearest neighbours of every query atom,
+which a naive implementation obtains from an $L\times L$ distance matrix, the very
+object that cannot be afforded at these scales. Instead, each device computes
+distances between its local atom rows and those resident on its column partner,
+in chunks, so that even the per-quadrant block is never held in full; a ring
+reduction then merges partial top-$k$ candidates around the column axis over
+$\sqrt{P}$ steps. After the final step each device holds the global top-$k$
+indices for its own query atoms, and no $L\times L$ tensor is materialised on any
+device at any point.
+
+\clearpage
 \section{Icosahedral designs}
 \label{app:ico}
 

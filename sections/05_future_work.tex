@@ -10,8 +10,8 @@
 % pgfgantt block at the end to match your real milestones and dates.
 % -----------------------------------------------------------------------------
 
-Having established that we can model a whole symmetric assembly end to end
-(Chapters~\ref{ch:methods}--\ref{ch:results}), the research programme now
+Having shown that we can model a whole symmetric assembly end to end
+(Chapters~\ref{ch:methods}--\ref{ch:results}), my research programme now
 \emph{expands}: from a precise, near-term objective to a broad, multi-year agenda.
 The immediate goal is sharply defined; each subsequent direction opens the problem
 a little wider.
@@ -25,10 +25,12 @@ natural next step is \emph{conditional} generation, holding one or more function
 motifs (the antigen, or an epitope we wish to display) fixed while the model
 designs a symmetric scaffold that presents them. In the symmetric setting this is
 \emph{symmetric motif scaffolding}: the standard motif-scaffolding problem
-\parencite{didiFrameworkConditionalDiffusion2024,ahern_atom_2025} composed with the
+\parencite{watsonNovoDesignProtein2023,didiFrameworkConditionalDiffusion2024},
+recently generalised to atom-level motifs without known sequence indices
+\parencite{ahern_atom_2025}, composed with the
 point-group machinery of Section~\ref{sec:rfd3-symmetry}, so that a motif placed in
 one ASU is presented at every symmetry-equivalent position on the particle. Prior
-work on hallucinating symmetric assemblies
+work on hallucinating cyclic symmetric oligomers
 \parencite{wickyHallucinatingSymmetricProtein2022}, scaffolding at the scale of the
 structural universe \parencite{lin_out_2024}, and integrating functional motifs
 into designed nanoparticles \parencite{haas_novo_2026} indicates this is within
@@ -47,10 +49,11 @@ some spatial and shape conditioning: Chroma exposes programmable shape and
 symmetry constraints \parencite{ingrahamIlluminatingProteinSpace2023}, ProtComposer
 conditions structure generation on 3D ellipsoids
 \parencite{stark_protcomposer_2025}, and ProxelGen generates proteins as 3D
-densities \parencite{faltings_proxelgen_2025}; related approaches steer diffusion
-models with heterogeneous experimental densities
-\parencite{raghu_multiscale_2025} or at inference time via embedding optimisation
-\parencite{li_robust_2026}. I plan to improve on this spatial/shape conditioning so
+densities \parencite{faltings_proxelgen_2025}; related work steers a pretrained
+protein diffusion model at inference time to match experimental measurements such
+as cryo-EM density maps, either by guiding the atomic coordinates directly
+\parencite{raghu_multiscale_2025} or by optimising the model's conditional
+embeddings \parencite{li_robust_2026}. I plan to improve on this spatial/shape conditioning so
 that a designer can specify the target envelope of a nanoparticle (for instance to
 match a desired antigen valency or a delivery constraint) and have the model
 respect it, ideally composed with the symmetric-scaffolding capability of
@@ -63,22 +66,26 @@ More broadly, and over the remainder of the DPhil, I will continue to study the
 design of large, and often symmetric, protein assemblies as a subject in its own
 right. Doing this well requires understanding, and learning to design for, the
 factors that govern whether subunits actually come together: specific
-protein--protein interactions at the designed interfaces, the thermodynamics and
-energetics of self-assembly, and phenomena such as the structural flexibility and
-oligomorphism observed in designed assemblies
-\parencite{khmelinskaia_local_2025,marsh_structure_2015,goodsell_structural_2000}.
+protein--protein interactions at the designed interfaces and the
+thermodynamics of self-assembly, the functional and physicochemical drivers of
+symmetric oligomerisation \parencite{goodsell_structural_2000} and the multistep,
+ordered assembly pathways documented for natural complexes
+\parencite{marsh_structure_2015}, and phenomena such as the structural
+flexibility and oligomorphism observed in designed assemblies
+\parencite{khmelinskaia_local_2025}.
 The space of targets is correspondingly wide, from vaccine scaffolds to
 mechanically coupled molecular machines \parencite{courbet_computational_2022} and
 allosterically switchable assemblies \parencite{pillai_novo_2024}. This is the
 outermost ring of the funnel: a general research direction that the concrete
-projects above both feed into and help define.\\
-
-\textbf{Could also mention a few of my early results of the spatial/shape conditioning here?? Just to show that I know where I am going for the next few months??}
+projects above both feed into and help define.
 
 \section{Timeline and milestones}
 \label{sec:gantt}
 
-Figure~\ref{fig:gantt} summarises the plan on a single timeline. The chart is a \texttt{pgfgantt} skeleton for now.
+Figure~\ref{fig:gantt} summarises the plan on a single timeline: the work
+packages of Sections~\ref{sec:motif-scaffolding}--\ref{sec:broad-agenda}, the
+papers and conferences they are aimed at, and the two formal milestones of the
+DPhil.
 
 \clearpage % put the Gantt chart on its own page so it can't overlap the text above
 \begin{figure}[H]
@@ -127,6 +134,14 @@ Figure~\ref{fig:gantt} summarises the plan on a single timeline. The chart is a 
     \ganttgroup{Large symmetric assemblies}{6}{8} \\
     \ganttbar{PPIs \& thermodynamics\\of assembly}{6}{8} \\
     \ganttbar{Thesis writing}{7}{8} \\
+    % --- Papers and conferences ---
+    % Each paper bar ends on the submission deadline of the conference it targets:
+    % ICML 2027 closes in 2027 Q1, ICLR 2028 in 2027 Q3.
+    \ganttgroup{Papers \& conferences}{2}{8} \\
+    \ganttbar{Shape-conditioning paper\\(ICML 2027)}{2}{3} \\
+    \ganttbar{Symmetric-scaffolding paper\\(ICLR 2028)}{4}{5} \\
+    \ganttmilestone{ICML 2027}{4} \\
+    \ganttmilestone{ICLR 2028}{7} \\
     % --- Milestones ---
     \ganttmilestone{Transfer of Status}{1} \\
     \ganttmilestone{Confirmation of Status}{5}

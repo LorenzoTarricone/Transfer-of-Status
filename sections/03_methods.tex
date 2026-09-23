@@ -16,18 +16,22 @@ The problem set up in Chapter~\ref{ch:comp-design} is a memory problem: an all-a
 generative model can express a whole assembly, but cannot hold its quadratic
 activations on one accelerator. This chapter introduces \emph{Design-CP}, two
 context-parallel inference strategies that shard those activations across a
-multi-GPU mesh while leaving the pretrained model weights untouched.
+multi-GPU mesh while leaving the pretrained model weights untouched. Neither
+scheme alters the computation the model performs: both reproduce single-GPU
+inference numerically, and only the placement of the activations across devices
+differs.
 
 \section{RFdiffusion3 preliminaries and notation}
 \label{sec:rfd3-prelim}
 
-We build on RFdiffusion3 (RFD3), an all-atom denoising-diffusion model in the
-AlphaFold3 lineage \parencite{butcher_novo_2025,abramsonAccurateStructurePrediction2024,
-corley_accelerating_2025}. At each denoising step RFD3 jointly represents a
+We build on RFdiffusion3 (RFD3), an all-atom denoising-diffusion model whose
+diffusion module follows the AlphaFold3 design
+\parencite{butcher_novo_2025,abramsonAccurateStructurePrediction2024} and which is
+built on the AtomWorks framework \parencite{corley_accelerating_2025}. At each denoising step RFD3 jointly represents a
 structure at two resolutions. A \emph{token} track carries a single
 representation $S \in \mathbb{R}^{I \times c_s}$ and a pair representation
 $Z \in \mathbb{R}^{I \times I \times c_z}$ over $I$ tokens; an \emph{atom} track
-carries $A \in \mathbb{R}^{L \times c_\text{atom}}$ and a pair representation
+carries a single representation $A \in \mathbb{R}^{L \times c_\text{atom}}$ and a pair representation
 $P \in \mathbb{R}^{L \times L \times c_\text{atompair}}$ over $L$ atoms. Attention
 on each track adds a learned pair bias to the logits, e.g.
 %
@@ -36,76 +40,196 @@ on each track adds a learned pair bias to the logits, e.g.
   \label{eq:pair-bias-attn}
 \end{equation}
 %
-where $B(Z)$ projects the pair track into a per-head bias. Atom attention is made
-\emph{sparse} using a $k$-nearest-neighbour neighbourhood with $k \ll L$, but the
-pair storage $P$ remains quadratic in $L$. The single-GPU memory footprint is
+where $B(Z) \in \mathbb{R}^{I \times I \times H}$ projects the pair track into a
+bias for each of the $H$ attention heads. Atom attention is made \emph{sparse}
+using a $k$-nearest-neighbour neighbourhood with $k \ll L$, so its compute cost is
+$\mathcal{O}(Lk)$ rather than $\mathcal{O}(L^2)$; the pair storage $P$ nonetheless
+remains quadratic in $L$. The single-GPU memory footprint is
 therefore dominated by the $\mathcal{O}(I^2)$ and $\mathcal{O}(L^2)$ pair tensors,
 which is what limits the size of assembly that can be modelled at once.
+Sampling follows the EDM framework \parencite{karras_elucidating_2022} with the
+AlphaFold3 schedule; we leave the stock RFD3 settings untouched:
+$T=200$ denoising steps, two recycling iterations per step, and a sparse atom
+neighbourhood of $k=128$ keys.
 
 \section{Symmetry in RFD3}
 \label{sec:rfd3-symmetry}
 
-RFD3 can be run under a predefined point-group symmetry (e.g.\ cyclic, octahedral
-or icosahedral). The diffusion model is always executed on the \emph{entire}
-complex at every denoising step, but for a configurable fraction of steps (by
-default $90\%$) the model \emph{resymmetrises}: it extracts a single asymmetric
-subunit (ASU), regenerates the remaining subunits by applying the point-group
-operations, and feeds the symmetrised complex back into the loop. Two consequences
-matter for us. First, the effective degrees of freedom collapse to a single ASU,
-so the design space, and (empirically) the difficulty of producing protein-like
-structure at large system sizes, shrinks dramatically. Second, the model still
-attends over the full complex, so the quadratic memory cost is incurred in full;
-symmetry constrains the \emph{output} but not the \emph{activation size}. This is
-precisely the regime in which context parallelism pays off.
+When designing with a pre-defined point symmetry, the diffusion model is always
+run on the entire complex at every denoising step. For a configurable fraction of
+the trajectory (default $90\%$), RFD3 then \emph{resymmetrises} its prediction by
+extracting the coordinates of a single asymmetric subunit (ASU) and generating the
+remaining copies by applying the point-group operations. The resulting
+resymmetrised complex is the state that is fed into the next iteration of the
+sampling loop.
+
+Concretely, at each denoising step within the symmetrised portion of the
+trajectory: (i)~the \emph{full} (unsymmetrised) noised coordinates
+$\mathbf{X}^{(t)}$ are passed to the network, which predicts clean coordinates
+$\hat{\mathbf{X}}_0$ for all chains; (ii)~the predicted coordinates are centred,
+the ASU slice of $\hat{\mathbf{X}}_0$ is extracted, and the non-ASU chains are
+overwritten by $R_g\,\hat{\mathbf{X}}_{0,\text{ASU}}$ for $g=2,\dots,G$, where
+$\{R_g\}_{g=1}^{G}\in\mathrm{SO}(3)$ are the rotations of the chosen point group;
+(iii)~this symmetrised prediction is used in the EDM update
+\parencite{karras_elucidating_2022}. The noise injected at each step is
+\emph{not} symmetrised, so the noised coordinates seen by the network are not
+exactly symmetric; only the predicted output is forced to be exactly symmetric at
+each symmetrised step. For the final $10\%$ of steps, no symmetry is enforced,
+allowing the model to relax any residual strain at the inter-subunit interfaces
+before output.
+
+The sampler therefore varies the coordinates of a single ASU rather than those of
+the full assembly, which shrinks the design space and couples distant regions of
+the assembly by forcing every subunit to share the same ASU backbone. Context
+parallelism allows the model to consider, and remain self-consistent with respect
+to, the full set of residue and atom interactions in the assembly, while the
+symmetry prior ensures that the number of \emph{free} coordinates the sampler must
+generate is that of a single ASU.
+
+The procedure is applied independently on every rank. Because rank~$0$ broadcasts
+the noised coordinates, the sampled Gaussian noise and the network's clean
+prediction at every diffusion step, the inputs to step~(ii) are bit-identical
+across ranks, and the deterministic ASU extraction and frame application reproduce
+the same symmetrised prediction on every device. No additional communication is
+needed for symmetric design beyond the ones that the parallel schemes already
+perform, so the symmetrisation procedure is \emph{orthogonal} to context
+parallelism. Further detail is given in Appendix~\ref{app:implementation}.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{Figure_1.png}
+  \caption{\textbf{Symmetric design with Design-CP.}
+    \textbf{(a)} Schematic depiction of the sharding techniques implemented in
+    Design-CP. Every square represents a sub-tensor of the self-attention matrix,
+    and its colour represents its assigned device. 1D sharding partitions the
+    queries across different GPUs, where they are used to calculate
+    cross-attention against all keys. 2D sharding partitions both queries and keys
+    and uses ring attention to compute attention scores on the fly.
+    \textbf{(b)} Qualitative comparison of large-design samples. Designs of a
+    $10{,}800$ amino-acid protein using different symmetries. Designs that exceed
+    the native crop limits can show visible degradation when sampled without
+    additional structure constraints; imposing a strong symmetry prior mitigates
+    this effect by reducing the effective design space.}
+  \label{fig:large-designs}
+\end{figure}
 
 \section{Design-CP 1D row-sharding}
 \label{sec:cp-1d}
 
-The first scheme is a lightweight, pure-PyTorch/NCCL context-parallel strategy
-that requires no custom kernels. It stripes the query (row) dimension of every
-$I\times I$ and $L\times L$ operation across $P$ GPUs, so that each device holds
-$\mathcal{O}(I^2/P)$ and $\mathcal{O}(L^2/P)$ of the pair activations. Under this
-sharding each self-attention becomes a cross-attention between a device's local
-queries and the full set of keys and values, followed by a single
-\texttt{ALLGATHER} of the single-track representation after each block to restore
-a globally consistent state. RFD3 has no MSA track and no triangular-attention
-operations, which is what makes this simpler 1D scheme viable (their absence is
-what forces more elaborate schemes in structure-prediction models). Full
-implementation details (chunk distribution, communication-volume accounting and
-determinism guards) are deferred to the appendix.
+Our first scheme, implemented in PyTorch with NCCL and without custom kernels or
+\texttt{DTensor} machinery, partitions the query dimension of every $I\times I$
+and $L\times L$ operation across $P$ GPUs (Figure~\ref{fig:large-designs}a).
+GPU~$p$ materialises only its row stripe of the pair track:
+%
+\begin{equation}
+  \mathbf{Z}^{(p)} \in \mathbb{R}^{I_p \times I \times c_z}, \qquad
+  I_p = \lfloor I/P \rfloor + \mathbb{I}[\,p < I \bmod P\,],
+  \label{eq:row-stripe}
+\end{equation}
+%
+where $\mathbb{I}[\,\cdot\,]\in\{0,1\}$ denotes the indicator function of its
+predicate. When $I$ is not divisible by $P$, the floor $\lfloor I/P\rfloor$ leaves
+a remainder of $I \bmod P$ elements that must still be assigned. We absorb this
+remainder by giving the first $I \bmod P$ ranks one additional row each: rank $p$
+receives the extra row precisely when $p < I \bmod P$, which is what the indicator
+encodes. By construction $\sum_{p}I_p = I$, no element is dropped, and chunk sizes
+differ by at most one across GPUs, so the load imbalance per attention block is
+bounded by a single row regardless of $P$. The pair tracks $\mathbf{Z}^{(p)}$ and
+the self-conditioning distogram $\mathbf{D}^{(p)}_\text{self}$ are in this way
+\emph{never} gathered to their full $[I,I]$ shape.
+
+Every self-attention block is reformulated as a cross-attention: GPU~$p$ projects
+queries from its stripe $\mathbf{Q}^{(p)}=f_Q(\mathbf{S}^{(p)})\in
+\mathbb{R}^{I_p\times H\times d}$, while keys and values are projected from the
+\emph{full} single-track $\mathbf{S}$, which is replicated on every GPU. The pair
+bias is drawn from the local stripe, $\mathbf{B}^{(p)}=f_B(\mathbf{Z}^{(p)})\in
+\mathbb{R}^{I_p\times I\times H}$, and
+%
+\begin{equation}
+  \operatorname{Attn}^{(p)} = \operatorname{softmax}\!\left(
+    \mathbf{Q}^{(p)} \mathbf{K}^\top/\sqrt{d} + \mathbf{B}^{(p)}
+  \right) \mathbf{V}.
+  \label{eq:cross-attn}
+\end{equation}
+%
+A single \textsc{AllGather} over the 1D track reconstructs
+$\mathbf{S}=\bigoplus_{p}\mathbf{S}^{(p)}\in\mathbb{R}^{I\times c_s}$ after each
+block, so that all GPUs hold identical $\mathbf{K}$ and $\mathbf{V}$ for the next
+block. The same partition applies at the atom level. The dense atom pair track is
+striped as $\mathbf{P}^{(p)}\in\mathbb{R}^{L_p\times L\times c_\text{atompair}}$,
+reducing its per-GPU storage from $\mathcal{O}(L^{2})$ to
+$\mathcal{O}(L^{2}/P)$. The sparse $k$-nearest-neighbour attention is then applied
+per shard: each GPU gathers, from its stripe of $\mathbf{P}^{(p)}$, the $k$
+neighbour entries for each of its $L_p$ query atoms, yielding a local bias
+$\mathbf{P}^{(p)}_\text{sparse}\in\mathbb{R}^{L_p\times k\times c_\text{atompair}}$
+at attention-computation cost $\mathcal{O}(L\,k/P)$. At diffusion-step boundaries,
+rank~$0$ broadcasts the noised coordinates, sampled Gaussian noise and denoised
+prediction so that all ranks share a single stochastic trajectory. Per-GPU
+pair-track memory is therefore $\mathcal{O}(I^{2}/P)$ for $\mathbf{Z}$ and
+$\mathcal{O}(L^{2}/P)$ for $\mathbf{P}$. A more detailed description is provided in
+Appendix~\ref{app:implementation}.
 
 \section{Design-CP 2D grid context parallelism}
 \label{sec:cp-2d}
 
-The second scheme is a direct port of the Fold-CP framework
-\parencite{lin_fold-cp_2026} to a generative model. The $P$ GPUs are arranged on a
-$\sqrt{P}\times\sqrt{P}$ grid (so $P$ must be a perfect square), and the pair
-tensor is tiled over both its dimensions. Attention is computed with \emph{ring
-attention} \parencite{liu_ring_2023}: keys and values are shifted around each row
-of the grid while an \emph{online-softmax} accumulator
-\parencite{milakov_online_2018} maintains numerically exact results without ever
-materialising the full attention matrix, in the same spirit as memory-efficient
-attention kernels \parencite{dao_flashattention_2022,dao_flashattention-2_2023}.
-Parameters are replicated across the mesh using \texttt{DTensor}s while the
-activations are distributed. Because ring communication overlaps with compute and
-is confined to $\sqrt{P}$-sized subgroups, the 2D scheme scales better in
-wall-clock time than the global \texttt{ALLGATHER} of the 1D scheme, at the cost of
-a more intricate implementation (device mesh, distributed $k$-NN for the sparse
-atom attention, and determinism boundaries), again detailed in the appendix.
+Our second scheme adopts the Fold-CP framework \parencite{lin_fold-cp_2026} and
+specialises it to RFD3 (Figure~\ref{fig:large-designs}a). We arrange $P$ GPUs on a
+$\sqrt{P}\times\sqrt{P}$ grid and tile the pair tensor into local quadrants
+$\mathbf{Z}^{(r,c)}\in\mathbb{R}^{I_r\times I_c\times c_z}$ at grid position
+$(r,c)$, with $I_r=I/\sqrt{P}$. Queries are sharded along the row axis and
+replicated along the column axis; keys and values are sharded along the column
+axis and circulated by $\sqrt{P}$ ring shifts, with an initial
+$(r,c)\leftrightarrow(c,r)$ transpose to align them with the query rows. At each
+ring step, a GPU computes attention between its resident $\mathbf{Q}$ rows and the
+currently visited $\mathbf{K}$/$\mathbf{V}$ shard, using the local bias quadrant,
+and merges the partial output into a running total via an online softmax
+\parencite{milakov_online_2018,liu_ring_2023}. All tensors are represented as
+PyTorch \texttt{DTensor}s; parameters are replicated across the grid.
+
+Asymptotically, per-device pair-track memory is $\mathcal{O}(I^{2}/P)$, the same
+as the 1D scheme, while $\mathbf{K}$ and $\mathbf{V}$ are ring-rotated rather than
+replicated, so each device only ever holds an $\mathcal{O}(I/\sqrt{P})$ slab of
+$\mathbf{K}$/$\mathbf{V}$ at a time. The $\sqrt{P}$ ring shifts per attention block
+are overlapped with local computation.
+
+Relative to Fold-CP, the RFD3 adaptation mainly concerns the sampling loop and the
+atom-level path: the ring primitive is invoked inside every recycling iteration of
+every denoising step, with rank-$0$ broadcasts at step boundaries that mirror the
+1D scheme, and the sparse atom attention requires a distributed $k$-nearest-neighbour
+search that avoids materialising any $[L,L]$ distance tensor. Concrete descriptions
+of these adaptations are deferred to Appendix~\ref{app:implementation}. This 2D
+grid scheme applies only when the available GPU count $P$ is a perfect square, so
+that devices can be arranged as a $\sqrt{P}\times\sqrt{P}$ mesh.
 
 \section{In-silico evaluation}
 \label{sec:evaluation}
 
-Because both schemes are \emph{inference-only} reparametrisations of a fixed model,
-we evaluate the generated assemblies rather than any retrained network. We report
-two families of in-silico metrics. \emph{Backbone-sanity} (per-chain designability)
-metrics quantify whether each chain is a plausible protein: chain breaks, backbone
-clashes, non-loop (secondary-structure) fraction, maximum C$\alpha$ deviation, and
-secondary-structure composition. \emph{Symmetry-aware interface} metrics quantify
-whether the subunits assemble sensibly: per-ASU clashes, mean contacts per
-interface, minimum inter-chain distance, and the number of interfaces that make
-contact. Where a natural reference particle is available we benchmark against it;
-for icosahedral designs we use lumazine synthase (PDB~1NQX), a natural icosahedral
-particle used as a vaccine scaffold
-\parencite{joseph_lumazine_2025,ladenstein_second_2020}. Precise definitions of
-each metric are collected in the appendix.
+A standard \emph{de novo} design pipeline often couples a structure generator
+(RFdiffusion or RFD3), a sequence designer such as ProteinMPNN
+\parencite{dauparasRobustDeepLearning2022}, and an external structure predictor
+for refolding-based validation. For very large multimeric assemblies, however,
+prediction-based oracles become both more expensive and less reliable:
+AlphaFold-Multimer accuracy, for example, has been found to degrade with chain
+count \parencite{bryant_predicting_2022}. We therefore assess design quality
+primarily through \emph{in silico} structural sanity checks computed directly from
+the generated all-atom coordinates, and we organise the assessment into two
+questions: (i)~does sampling at this scale via Design-CP preserve the per-chain
+backbone quality of the original RFD3 model, and (ii)~does the symmetrised
+assembly realise the intended interfaces, consistently with a functional natural
+baseline.
+
+The metrics fall into two families. \emph{Backbone sanity} metrics flag designs
+whose monomeric chain is geometrically broken, irrespective of any symmetry
+consideration: chain breaks, backbone heavy-atom clashes, the non-loop fraction
+and the maximum C$\alpha$--C$\alpha$ bond deviation. \emph{Symmetric-interface
+sanity} metrics use the full symmetrised complex and probe its inter-subunit
+geometry: ASU clashes, mean contacts per interface, minimum inter-chain distance
+and the number of interfaces that make contact. For icosahedral designs these are
+computed between the ASU and its eight nearest icosahedral neighbours. Where a
+natural reference particle is available we overlay it in every panel; for
+icosahedral designs we use lumazine synthase from \emph{Aquifex aeolicus}
+(PDB~1NQX, biological assembly~1: a 60-subunit $T{=}1$ icosahedral capsid)
+\parencite{zhang_structure-based_2003}, selected as a naturally occurring
+nanoparticle that has previously been employed as a vaccine scaffold
+\parencite{ladenstein_second_2020,joseph_lumazine_2025}. Precise definitions, with
+every threshold, are collected in Appendix~\ref{app:metric-defs}.

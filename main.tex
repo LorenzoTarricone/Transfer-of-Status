@@ -76,8 +76,11 @@
 
 %------------------------------- Bibliography ---------------------------------
 % Author-year style (biblatex + biber), matching the confirmed preference.
+% uniquename=false: without it biblatex prefixes surnames with initials whenever
+% two cited authors share a surname (e.g. "Y. Lin" vs "D. Lin"), which clutters
+% the in-text citations; surnames alone are enough here.
 \usepackage[backend=biber,style=authoryear,maxcitenames=2,
-            giveninits=true,uniquename=init,sorting=nyt]{biblatex}
+            giveninits=true,uniquename=false,sorting=nyt]{biblatex}
 \addbibresource{references.bib}
 
 %==============================================================================
@@ -86,41 +89,40 @@
 %------------------------------- Title page -----------------------------------
 \begin{titlepage}
   \centering
-  \vspace*{1.5cm}
+  \singlespacing  % the document-wide \onehalfspacing overflows this page
+  \vspace*{1.2cm}
 
   {\Huge\bfseries De Novo Design of\\[6pt]
    Protein Nanoparticle Vaccines\par}
 
-  \vspace{1.2cm}
+  \vspace{1.0cm}
   {\Large\scshape Transfer of Status\par}
 
   \vspace{0.8cm}
-  \includegraphics[width=0.4\textwidth]{figures/University_of_Oxford_logo.png}\par
+  \includegraphics[width=0.30\textwidth]{figures/University_of_Oxford_logo.png}\par
 
-  \vspace{1.2cm}
+  \vspace{1.0cm}
   {\LARGE Lorenzo Tarricone\par}
 
-  \vspace{2.0cm}
+  \vspace{1.4cm}
   {\large Supervised by\par}
   \vspace{0.3cm}
   {\large Prof.\ Charlotte M.\ Deane\par}
   {\normalsize Department of Statistics\par}
-  {\large Prof.\ Rezende J.\ Danilo\par}
+  \vspace{0.25cm}
+  {\large Prof.\ Danilo J.\ Rezende\par}
   {\normalsize Department of Statistics, EIT Oxford\par}
-  {\large Dr.\ Macak.\ Matej \par}
+  \vspace{0.25cm}
+  {\large Dr.\ Matej Macak\par}
   {\normalsize EIT Oxford\par}
-  
 
   \vfill
 
-  % TODO: replace with your college.
   {\large \textit{Keble College}\par}
   \vspace{0.4cm}
   {\large University of Oxford\par}
   \vspace{0.4cm}
-  {\large Michelmas Term 2026\par} % TODO: confirm the term/date
-
-  \vspace{1.5cm}
+  {\large Michelmas Term 2026\par}
 \end{titlepage}
 
 %------------------------------- Front matter ---------------------------------
