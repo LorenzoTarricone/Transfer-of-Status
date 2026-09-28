@@ -50,6 +50,24 @@ though the mean is healthy.
 \section{Implementation notes}
 \label{app:implementation}
 
+\paragraph{Per-step symmetrisation.}
+At each denoising step within the symmetrised portion of the trajectory:
+(i)~Gaussian noise is added to the current coordinates and the noised structure is
+itself symmetrised, so the network receives an exactly symmetric input
+$\mathbf{X}^{(t)}$; (ii)~the network predicts clean coordinates
+$\hat{\mathbf{X}}_0$ for all chains, which need not be exactly symmetric;
+(iii)~the prediction is centred, the ASU slice is extracted and centred, and every
+subunit (including the ASU itself) is rebuilt as
+$R_g\,\hat{\mathbf{X}}_{0,\text{ASU}} + \lambda\,\mathbf{t}_g$, where
+$\{(R_g,\mathbf{t}_g)\}_{g=1}^{G}$ are the rigid-body transforms of the chosen
+point group and $\lambda$ is a scale factor that adapts the inter-subunit distance
+to the current prediction; in the second half of the trajectory, a short
+Lennard-Jones-based rigid-body optimisation of the ASU against its symmetry copies
+is applied before this step to reduce inter-subunit clashes; (iv)~this symmetrised
+prediction is used in the EDM update \parencite{karras_elucidating_2022}. For the
+final $10\%$ of steps, no symmetry is enforced, allowing the model to relax any
+residual strain at the inter-subunit interfaces before output.
+
 \paragraph{Chunk distribution.}
 Device $p$ receives $I_p$ rows as in Equation~\eqref{eq:row-stripe}, starting at
 $p\lfloor I/P\rfloor + \min(p,\, I \bmod P)$. Uneven chunks are handled by padding
@@ -72,9 +90,12 @@ discrepancy is amplified and breaks the requirement that all ranks hold identica
 keys and values. A single broadcast of the pooled features immediately after the
 reduction restores the invariant. The 2D scheme implements the same pooling as a
 distributed scatter-reduce collective, which is deterministic by construction and
-needs no broadcast. In both schemes the noised coordinates, the sampled noise and
-the denoised prediction are broadcast at each step boundary, so a given seed
-produces the same trajectory under either scheme.
+needs no broadcast. The two schemes also keep the sampling loop itself consistent
+by different routes: the 1D scheme broadcasts the sampled noise and the denoised
+prediction from rank~$0$ at each step boundary, whereas the 2D scheme draws the
+full-shape noise tensor from per-rank generators held in lockstep and shards it
+afterwards, so that no broadcast is required. Either way, a given seed produces
+the same trajectory under either scheme.
 
 \paragraph{Distributed nearest neighbours.}
 The sparse atom attention needs the $k$ nearest neighbours of every query atom,

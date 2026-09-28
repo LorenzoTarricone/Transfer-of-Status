@@ -12,9 +12,10 @@
 % here and cite the appendix.
 % -----------------------------------------------------------------------------
 
-The problem set up in Chapter~\ref{ch:comp-design} is a memory problem: an all-atom
+As discussed in Chapter~\ref{ch:current-memory-reduction-methods}, the current barrier for designing
+whole protein assembly de-novo is a memory problem. An all-atom
 generative model can express a whole assembly, but cannot hold its quadratic
-activations on one accelerator. This chapter introduces \emph{Design-CP}, two
+activations needed for pair-biased attention on one accelerator. This chapter introduces \emph{Design-CP}, two
 context-parallel inference strategies that shard those activations across a
 multi-GPU mesh while leaving the pretrained model weights untouched. Neither
 scheme alters the computation the model performs: both reproduce single-GPU
@@ -24,9 +25,9 @@ differs.
 \section{RFdiffusion3 preliminaries and notation}
 \label{sec:rfd3-prelim}
 
-We build on RFdiffusion3 (RFD3), an all-atom denoising-diffusion model whose
+We build on RFdiffusion3 (RFD3) \parencite{butcher_novo_2025}, an all-atom denoising-diffusion model whose
 diffusion module follows the AlphaFold3 design
-\parencite{butcher_novo_2025,abramsonAccurateStructurePrediction2024} and which is
+\parencite{abramsonAccurateStructurePrediction2024} and which is
 built on the AtomWorks framework \parencite{corley_accelerating_2025}. At each denoising step RFD3 jointly represents a
 structure at two resolutions. A \emph{token} track carries a single
 representation $S \in \mathbb{R}^{I \times c_s}$ and a pair representation
@@ -41,19 +42,17 @@ on each track adds a learned pair bias to the logits, e.g.
 \end{equation}
 %
 where $B(Z) \in \mathbb{R}^{I \times I \times H}$ projects the pair track into a
-bias for each of the $H$ attention heads. Atom attention is made \emph{sparse}
+bias for each of the $H$ attention heads. Atom attention can be made \emph{sparse}
 using a $k$-nearest-neighbour neighbourhood with $k \ll L$, so its compute cost is
-$\mathcal{O}(Lk)$ rather than $\mathcal{O}(L^2)$; the pair storage $P$ nonetheless
+$\mathcal{O}(Lk)$ rather than $\mathcal{O}(L^2)$. This is an approximation with respect to 
+how the model was trained (which used the full matrix $P$), and when not used the pair storage $P$
 remains quadratic in $L$. The single-GPU memory footprint is
-therefore dominated by the $\mathcal{O}(I^2)$ and $\mathcal{O}(L^2)$ pair tensors,
+therefore dominated by the $\mathcal{O}(I^2)$ and possibly the $\mathcal{O}(L^2)$ pair tensors,
 which is what limits the size of assembly that can be modelled at once.
 Sampling follows the EDM framework \parencite{karras_elucidating_2022} with the
-AlphaFold3 schedule; we leave the stock RFD3 settings untouched:
+AlphaFold3 schedule. We leave the stock RFD3 settings untouched:
 $T=200$ denoising steps, two recycling iterations per step, and a sparse atom
 neighbourhood of $k=128$ keys.
-
-\section{Symmetry in RFD3}
-\label{sec:rfd3-symmetry}
 
 When designing with a pre-defined point symmetry, the diffusion model is always
 run on the entire complex at every denoising step. For a configurable fraction of
@@ -61,39 +60,11 @@ the trajectory (default $90\%$), RFD3 then \emph{resymmetrises} its prediction b
 extracting the coordinates of a single asymmetric subunit (ASU) and generating the
 remaining copies by applying the point-group operations. The resulting
 resymmetrised complex is the state that is fed into the next iteration of the
-sampling loop.
-
-Concretely, at each denoising step within the symmetrised portion of the
-trajectory: (i)~the \emph{full} (unsymmetrised) noised coordinates
-$\mathbf{X}^{(t)}$ are passed to the network, which predicts clean coordinates
-$\hat{\mathbf{X}}_0$ for all chains; (ii)~the predicted coordinates are centred,
-the ASU slice of $\hat{\mathbf{X}}_0$ is extracted, and the non-ASU chains are
-overwritten by $R_g\,\hat{\mathbf{X}}_{0,\text{ASU}}$ for $g=2,\dots,G$, where
-$\{R_g\}_{g=1}^{G}\in\mathrm{SO}(3)$ are the rotations of the chosen point group;
-(iii)~this symmetrised prediction is used in the EDM update
-\parencite{karras_elucidating_2022}. The noise injected at each step is
-\emph{not} symmetrised, so the noised coordinates seen by the network are not
-exactly symmetric; only the predicted output is forced to be exactly symmetric at
-each symmetrised step. For the final $10\%$ of steps, no symmetry is enforced,
-allowing the model to relax any residual strain at the inter-subunit interfaces
-before output.
-
-The sampler therefore varies the coordinates of a single ASU rather than those of
-the full assembly, which shrinks the design space and couples distant regions of
-the assembly by forcing every subunit to share the same ASU backbone. Context
-parallelism allows the model to consider, and remain self-consistent with respect
-to, the full set of residue and atom interactions in the assembly, while the
-symmetry prior ensures that the number of \emph{free} coordinates the sampler must
-generate is that of a single ASU.
-
-The procedure is applied independently on every rank. Because rank~$0$ broadcasts
-the noised coordinates, the sampled Gaussian noise and the network's clean
-prediction at every diffusion step, the inputs to step~(ii) are bit-identical
-across ranks, and the deterministic ASU extraction and frame application reproduce
-the same symmetrised prediction on every device. No additional communication is
-needed for symmetric design beyond the ones that the parallel schemes already
-perform, so the symmetrisation procedure is \emph{orthogonal} to context
-parallelism. Further detail is given in Appendix~\ref{app:implementation}.
+sampling loop. Because the network still denoises every atom of the assembly, it
+can account for the full set of inter-subunit interactions, while the symmetry
+constraint couples atom positions across subunits and thereby reduces the
+effective degrees of freedom of the design to those of a single ASU. The per-step
+procedure is set out in Appendix~\ref{app:implementation}.
 
 \begin{figure}[t]
   \centering
@@ -118,7 +89,7 @@ parallelism. Further detail is given in Appendix~\ref{app:implementation}.
 
 Our first scheme, implemented in PyTorch with NCCL and without custom kernels or
 \texttt{DTensor} machinery, partitions the query dimension of every $I\times I$
-and $L\times L$ operation across $P$ GPUs (Figure~\ref{fig:large-designs}a).
+and $L\times L$ operation across $P$ GPUs (Figure~\ref{fig:large-designs}a, center).
 GPU~$p$ materialises only its row stripe of the pair track:
 %
 \begin{equation}
@@ -173,7 +144,7 @@ Appendix~\ref{app:implementation}.
 \label{sec:cp-2d}
 
 Our second scheme adopts the Fold-CP framework \parencite{lin_fold-cp_2026} and
-specialises it to RFD3 (Figure~\ref{fig:large-designs}a). We arrange $P$ GPUs on a
+specialises it to RFD3 (Figure~\ref{fig:large-designs}a, right). We arrange $P$ GPUs on a
 $\sqrt{P}\times\sqrt{P}$ grid and tile the pair tensor into local quadrants
 $\mathbf{Z}^{(r,c)}\in\mathbb{R}^{I_r\times I_c\times c_z}$ at grid position
 $(r,c)$, with $I_r=I/\sqrt{P}$. Queries are sharded along the row axis and
@@ -200,6 +171,44 @@ search that avoids materialising any $[L,L]$ distance tensor. Concrete descripti
 of these adaptations are deferred to Appendix~\ref{app:implementation}. This 2D
 grid scheme applies only when the available GPU count $P$ is a perfect square, so
 that devices can be arranged as a $\sqrt{P}\times\sqrt{P}$ mesh.
+
+%NOTE: Keep this commented out for now. I don't know if I want it 
+% \section{Composition of symmetry with context parallelism}
+% \label{sec:symmetry-cp}
+
+% In both schemes the symmetrisation of Section~\ref{sec:rfd3-symmetry} is executed
+% redundantly on every rank rather than being distributed: each device applies the
+% point-group operations to full-size coordinates and obtains the same result, so
+% every rank follows an identical sampling trajectory. The two schemes differ in how
+% those identical inputs are produced.
+
+% The 1D scheme keeps the coordinate state replicated across ranks. Its sampling
+% loop broadcasts the sampled Gaussian noise and the network's clean prediction from
+% rank~$0$ at every denoising step, and the initial coordinates once at the start;
+% these broadcasts are a determinism guard that is present whether or not symmetry
+% is active. The symmetrised path therefore consumes bit-identical inputs on every
+% device, and the deterministic ASU extraction and frame application reproduce the
+% same symmetrised coordinates everywhere, without any communication attributable to
+% symmetry itself.
+
+% The 2D scheme instead holds the coordinates as \texttt{DTensor}s sharded along the
+% atom dimension, and obtains identical noise by drawing the full-shape tensor from
+% per-rank RNG states held in lockstep before sharding it, rather than by
+% broadcasting. Because the ASU is selected by boolean indexing over the atom
+% dimension, the coordinates must be gathered before the point-group operations are
+% applied and re-sharded afterwards, once for the noised coordinates and once for
+% the prediction. Symmetric design does therefore add collectives in this scheme,
+% but they act on the $\mathcal{O}(L)$ coordinate array rather than on the
+% $\mathcal{O}(I^{2})$ pair track, and are negligible beside the $\sqrt{P}$ ring
+% exchanges performed inside every attention block of every recycling iteration.
+
+% Neither scheme alters the sharding of the pair track, the ring schedule or the
+% model weights; symmetry acts only on the coordinate state between denoising steps.
+% This is the operational sense in which the symmetrisation procedure is
+% \emph{orthogonal} to context parallelism, and it is the reason a single set of
+% pretrained weights designs both the unsymmetrised baselines and the icosahedral
+% and octahedral assemblies of Chapter~\ref{ch:results}. Further detail is given in
+% Appendix~\ref{app:implementation}.
 
 \section{In-silico evaluation}
 \label{sec:evaluation}

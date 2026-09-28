@@ -1,0 +1,95 @@
+\chapter{Current Memory Reduction Methods}
+\label{ch:current-memory-reduction-methods}
+
+Recent all-atom generative models such as RFDiffusion 3~\cite{butcher_novo_2025} (RFD3), 
+which is inspired by the AlphaFold 3 architecture~\cite{abramson_accurate_2024} (AF3),
+can in principle generate multimeric structures such as the symmetric assembly needed as scaffolds
+for nanoparticle vaccines. This is achieved by jointly modelling all chains with
+an atomistic level of precision and designing proteins with predefined point-group 
+symmetries. However, the underlying architecture maintains pairwise representations 
+whose memory cost scales quadratically with the number of tokens~$I$ (and atoms~$L$). 
+For protein assemblies, $I$ and $L$ grow linearly with the number of chains
+modelled, causing the $\mathcal{O}$($I^{2}$) and $\mathcal{O}$($L^{2}$) pairwise 
+feature tensors and related quadratic intermediates to exceed the memory capacity 
+of a single GPU when trying to model assemblies of the size relevant for nanoparticle vaccines. 
+This practical bottleneck therefore heavily limits the size of what can be
+designed.
+
+% This single-device ceiling, however, contrasts with broader trends in 
+% computational infrastructure: while single-device memory capacity has grown only 
+% incrementally, access to multi-GPU clusters is now routine for both academic and 
+% industrial research groups. Accordingly, partitioning large transformer workloads 
+% across such clusters has become standard practice in adjacent fields such as large 
+% language modelling, both for training~\cite{li_sequence_2022} and 
+% inference~\cite{pope_efficiently_2022}.
+
+\section{Reducing the cost of attention}
+\label{sec:reducing-attention-cost}
+
+In the literature (especially in the one related to large language models), several strategies have 
+been proposed to reduce the memory cost of attention. Here we briefly cover 
+IO-efficient attention on a single device, while devoting most of this sec-
+tion to distributed parallelism for structure models, because our developed solution 
+\cref{ch:methods} sits in this realm. 
+
+\subsection{IO-efficient attention}
+\label{subsec:io-efficient-attention}
+FlashAttention \cite{dao_flashattention_2022, dao_flashattention-2_2023}
+computes exact attention with memory linear in sequence length 
+($\mathcal{O}(I)$ or $\mathcal{O}(L)$ in our notation) by tiling queries, keys, 
+and values into SRAM-resident blocks while maintaining running softmax statistics 
+\citep{milakov_online_2018}, building on the earlier observation that attention 
+admits a linear-memory implementation \citep{rabe_self-attention_2022}. 
+For architectures without pair representations, this suffices and motivates its 
+use in protein language models like ESM3 \citep{hayes_simulating_2025}, which 
+represent sequence, structure, and function as discrete tokens and condense 
+pairwise geometry into a single SE(3)-invariant geometric-attention block at 
+the input. Flash‑IPA \citep{liu_flash_2025} and FlashBias \citep{wu_flashbias_2025} 
+extend this idea to pair‑biased attention, such as the one present in AlphaFold‑3 
+Pairformer, by re-expressing geometric and pairwise bias terms via additional low‑rank 
+features concatenated into the query and key projections. For complex learned pair
+biases, these methods generally require training auxiliary parameters and are not 
+a weight‑preserving drop‑in for an arbitrary pretrained model. 
+% These approaches are 
+% orthogonal to Design-CP: they reduce the per-block memory footprint on a single device, 
+% while we shard the persistent quadratic activations across devices, and the two could in principle be composed.
+
+\subsection{Distributed parallelism for structure models.} 
+Among the standard parallelism axes (data, tensor, pipeline, expert, activation), 
+\emph{context parallelism} uniquely shards activations along the sequence dimension 
+of every layer, which makes it a natural fit for the $\mathcal{O}(I^2)$ pair tensor 
+of AlphaFold-class models. FastFold \citep{cheng_fastfold_2023} introduced Dynamic 
+Axial Parallelism (DAP) for AlphaFold~2, replicating parameters on every device and 
+sharding activations along a single sequence axis at a time; 
+ScaleFold \citep{zhu_scalefold_2024} adopted DAP and scaled to 2048 H100s for training. 
+As the Evoformer interleaves row- and column-wise attention over the MSA track, 
+DAP must insert an all-to-all communication step whenever the active axis flips, 
+incurring six all-to-all redistributions per Evoformer block at inference, together
+with one \textsc{AllGather} in the outer-product-mean and two in the triangular
+updates~\citep{cheng_fastfold_2023}. These collectives contribute non-trivially 
+to inference latency at scale and increase transient memory relative to the 
+steady-state ($\mathcal{O}(I^2/P)$, where $P$ is the total number of devices) sharded pair representation.
+
+Fold-CP \citep{lin_fold-cp_2026} generalises axis sharding to a full two-dimensional 
+context-parallel strategy for AF3-class models (implementing it for 
+Boltz-2~\citep{passaro_boltz-2_2025}), extending Ring Attention~\citep{liu_ring_2023} 
+into a Cannon-style 2D ring tailored to dense triangular updates, while window-batched
+atom attention is handled by a complementary shardwise kernel that keeps each 
+window's attention local to its rank. The pair tensor is tiled over a 
+$\sqrt{P}\times\sqrt{P}$ device grid, so that rank $(r,c)$ holds the block indexed 
+by residue ranges $[r\cdot I/\sqrt{P}, (r{+}1)\cdot I/\sqrt{P}]\times [c\cdot I/\sqrt{P}, (c{+}1)\cdot I/\sqrt{P}]$. 
+Triangle attention, triangle multiplication, attention-with-pair-bias, pair-weighted-averaging, 
+and outer-product-mean are each reformulated as ring algorithms in which $\mathbf{K}$ 
+and $\mathbf{V}$ shards (and, where required, triangular biases and masks) circulate 
+between neighbouring devices while a numerically-stable tiled softmax merges partial 
+outputs without ever materialising the full $I\times I$ attention on any rank. 
+The resulting steady-state pair memory per device is ($\mathcal{O}(I^2/P)$), matching 
+1D axis-sharded DAP. However, under 1D sharding, triangular updates typically require 
+collectives over all ($P$) ranks (e.g., to obtain the necessary key/value or bias 
+shards along the active axis), which can inflate the transient working-set memory 
+during attention/multiplication beyond the steady shard. In Fold‑CP’s 2D tiling, 
+collectives are restricted to a single row or column subgroup of size ($\sqrt{P}$). 
+This reduces communication volume and confines the transient working-set memory growth
+in triangular updates (e.g., gathered/circulated K/V shards, triangle biases, masks,
+and other pair-like intermediates) to ($\sqrt{P}$)-sized groups, rather than requiring 
+global ($P$)-way collectives.

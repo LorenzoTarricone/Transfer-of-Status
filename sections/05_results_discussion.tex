@@ -1,0 +1,319 @@
+%==============================================================================
+% Chapter 4 -- Results and discussion
+%==============================================================================
+\chapter{Results and discussion}
+\label{ch:results}
+
+We now show that Design-CP makes it possible to design whole symmetric
+nanoparticles end to end, characterise how it scales with the number of GPUs, and
+demonstrate that, because of the symmetry of the designed system, the approach is feasible even on
+commodity hardware. We close with a discussion of its limitations.
+
+\section{Design quality and symmetry}
+\label{sec:design-quality}
+
+Context parallelism is applied as an \emph{inference-only} modification: it
+changes how intermediate activations are partitioned and communicated, but does
+not alter the learned parameters of RFD3. This makes it immediately applicable to
+pretrained checkpoints, but it also means that when context parallelism is used to
+exceed RFD3's native crop limits, the model is sampled outside the regime it was
+trained on ($384$ tokens and $5{,}000$ atoms
+\parencite{butcher_novo_2025}). In practice, we find that this distribution shift
+can degrade sample quality when the target displays limited symmetry.
+
+Figure~\ref{fig:large-designs}b illustrates the effect qualitatively: when the
+number of atoms and tokens modelled is much higher than RFD3 saw during training,
+in this example a single monomer of $10{,}800$ amino acids sampled with 2D
+sharding, we observe visibly unnatural designs. By contrast, when constraints are
+introduced through symmetry while keeping the overall system size constant, the resulting
+assemblies appear visibly more protein-like even while the system size is kept constant. 
+
+We also assess that this apparent increase in sample quality is not an effect of chain length, 
+by designing and visually checking a series of samples at exactly the icosahedral system size
+($60$ chains of $210$ residues, $12{,}600$ residues in total) with \emph{no}
+point-group constraint imposed at sampling time, keeping tokens, atoms,
+architecture, weights and parallelisation strategy identical to the symmetric
+runs. The resulting structures are visibly degenerate: large slabs of
+$\beta$-strands packed in irregular orientations, no recognisable globular folds
+and no consistent inter-chain organisation (Appendix~\ref{app:monstromers},
+Figure~\ref{fig:monstromers}). We take this as direct qualitative evidence that
+the dominant factor is the symmetry prior rather than the length of the modelled
+chains.
+
+We attribute this effect to the symmetry sampling mechanism described in
+Section~\ref{sec:rfd3-symmetry}: at each symmetrised denoising step the network
+performs a full forward pass over all atoms of the assembly, but only the
+asymmetric subunit (ASU) of its prediction is retained, and the remaining subunits
+are overwritten by deterministic group-operation copies of that ASU. The sampler
+therefore varies the coordinates of a single ASU rather than those of the full
+assembly, which shrinks the effective degrees of freedom in the design space and
+couples distant regions of the assembly by forcing every subunit to share the same
+ASU backbone.
+
+This motivates the use of context parallelism for the design of highly symmetric
+protein assemblies such as octahedral and icosahedral capsids and cages. Context
+parallelism allows the model to consider, and remain self-consistent with respect
+to, the full set of residue and atom interactions in the assembly, while the
+symmetry prior ensures that the number of \emph{free} coordinates the sampler must
+generate is that of a single ASU, allowing the use of pre-trained weights.
+We turn to these targets next, as they are also our interest for nanoparticle vaccine design.
+
+\section{Designing icosahedral nanoparticles}
+\label{sec:icosahedral}
+
+We generated $n{=}40$ icosahedral nanoparticles ($210$ residues per chain, $60$
+chains, $12{,}600$ residues per assembly) with the 2D sharding scheme on a
+$2\times2$ grid of NVIDIA GH200 GPUs ($95\,$GB each) at batch size one. As set out 
+in Section~\ref{sec:evaluation}, we ask two questions:(i)~whether sampling at this
+scale via Design-CP preserves the per-chain backbone quality of the original
+RFD3 model, and (ii)~whether the symmetrised assembly realises the intended
+interfaces, consistently with a functional natural baseline. As a paired control
+for question~(i), we additionally sampled $n{=}40$ single-chain $210$-residue
+monomers with the standard single-GPU RFD3. Symmetry-aware metrics for
+question~(ii) are computed between the ASU and its eight nearest icosahedral
+neighbours (Figure~\ref{fig:icosahedral}a), and the corresponding lumazine
+synthase values are overlaid as a dotted reference line in every panel.
+
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{Figure_2.png}
+  \caption{\textbf{Designing icosahedral nanoparticles with Design-CP}
+    ($n{=}40$; $60$ chains $\times\,210$ residues $=12{,}600$ residues).
+    \textbf{(a)} A single asymmetric subunit (ASU, red) and its neighbouring
+    subunits (teal) on the icosahedral shell.
+    \textbf{(b--e)} Per-chain backbone-sanity metrics for the icosahedral designs
+    (I60) versus $n{=}40$ single-GPU RFD3 monomers, with the lumazine-synthase
+    reference (PDB~1NQX, dotted).
+    \textbf{(f)} A selected design with a zoom on an inter-ASU interface annotated
+    with C$\alpha$--C$\alpha$ distances.
+    \textbf{(g--l)} Symmetry-aware interface metrics against the 1NQX baseline.
+    Full distributions are reported in Appendix~\ref{app:extended}
+    (Figures~\ref{fig:ico-perchain}--\ref{fig:ico-symm}).}
+  \label{fig:icosahedral}
+\end{figure}
+
+\paragraph{Per-chain backbone quality broadly matches the original RFD3.}
+On the backbone-sanity indicators (Figure~\ref{fig:icosahedral}b--e), the two
+populations have broadly similar distributions: the average number of chain breaks
+per chain and the average count of backbone heavy-atom clashes per chain both have
+medians at zero. The ASUs extracted from the nanoparticles designed with Design-CP
+show, however, more outliers than the designed monomers, especially for the number
+of backbone clashes. The fraction of residues assigned to a helix or
+$\beta$-strand element is closely matched between them and to the 1NQX reference
+(medians of $\approx 0.60$ for the icosahedral ASUs against $\approx 0.65$ for
+monomers, and $\approx 0.68$ for 1NQX). A more notable gap appears in the maximum
+per-chain deviation of consecutive C$\alpha$--C$\alpha$ bond lengths from the
+canonical \SI{3.8}{\angstrom} value: monomers have a distribution concentrated
+around $\approx \SI{0.15}{\angstrom}$, whereas the icosahedral ASUs show a broader
+bulk around $\approx \SI{0.30}{\angstrom}$. We partially attribute these
+differences to the geometric strain of having to remain self-consistent with
+$59$ symmetry mates and all of the inter-subunit interfaces they form, inside a
+$12{,}600$-residue joint context, rather than to a degradation introduced by the
+context-parallel sampler itself. The icosahedral design problem is strictly harder
+per chain than designing monomers of the same length.
+
+\paragraph{Symmetric interfaces track a functional natural assembly.}
+Symmetry-aware metrics (Figure~\ref{fig:icosahedral}g--l) generally follow the
+1NQX baseline, but not every sample produces a sterically clean assembly. The
+number of inter-subunit clashes within the ASU's neighbourhood is non-zero for a
+substantial fraction of designs, despite the mean being around zero.
+Concordantly, the minimum C$\alpha$--C$\alpha$ distance between distinct chains is
+centred near the 1NQX reference at $\approx \SI{4}{\angstrom}$, but the lower tail
+of the distribution descends toward and below the \SI{3.5}{\angstrom}
+steric-overlap threshold, indicating that a fraction of designs realise inter-chain
+contacts inside the steric-overlap regime. The average number of
+C$\alpha$--C$\alpha$ contacts per inter-subunit interface centres around
+$\approx 125$, slightly above 1NQX rather than collapsing toward zero, and the
+number of interfaces making contact resembles that of 1NQX. Combined with the
+local visual evidence from the selected sample in
+Figure~\ref{fig:icosahedral}f, where ASU--ASU contacts settle into well-formed
+packing geometries with C$\alpha$--C$\alpha$ distances in the expected
+\SIrange{4}{10}{\angstrom} band, this indicates that the symmetrised denoising
+trajectory can recover physically reasonable inter-subunit interfaces rather than
+independently designing non-interacting chains.
+
+Together, these results show that Design-CP scales RFD3 sampling to large
+icosahedral assemblies without retraining or fine-tuning, broadly preserving
+per-chain backbone quality on par with vanilla RFD3 monomers and producing
+symmetry-consistent interfaces comparable to a functional natural icosahedral
+particle. Full metric distributions are reported in
+Appendix~\ref{app:extended}.
+
+
+\begin{table*}[!t]
+  \centering
+  \small
+  \caption{\textbf{Scaling of Design-CP under icosahedral symmetry.} For each GPU count $P$,
+   we report the maximum ASU length before out-of-memory and the wall-clock inference time 
+   \emph{at that maximum ASU length}, for the 1D and 2D sharding schemes. 
+   \emph{Capacity ratio} is defined as $L_{\max}^{\mathrm{2D}}/L_{\max}^{\mathrm{1D}}$ 
+   and \emph{speedup} as $t_{\mathrm{1D}}/t_{\mathrm{2D}}$, so that values greater than 
+   unity indicate that the 2D scheme outperforms the 1D scheme. All measurements use HG200 
+   GPUs (95\,GB each); a dash denotes a configuration that cannot be measured.}
+  \label{tab:scaling}
+  \begin{tabular}{rcccccc}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{Max ASU length before OOM} (residues)} & \multicolumn{3}{c}{\textbf{Wall-clock time at max ASU} (s)} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+    $P$ & \textbf{1D} & \textbf{2D} & \textbf{Capacity ratio} & \textbf{1D} & \textbf{2D} & \textbf{Speedup} \\
+    \midrule
+    1  & 58  & 58  & $1.00\times$ & 1023 & 1025 & $1.00\times$ \\
+    2  & 102 & --  & --           & 2340 & --   & --           \\
+    3  & 120 & --  & --           & 2943 & --   & --           \\
+    4  & 141 & 137 & $0.97\times$ & 4321 & 2230 & $1.94\times$ \\
+    5  & 160 & --  & --           & 3845 & --   & --           \\
+    6  & 173 & --  & --           & 3662 & --   & --           \\
+    7  & 186 & --  & --           & 4802 & --   & --           \\
+    8  & 196 & --  & --           & 4689 & --   & --           \\
+    9  & 201 & 201 & $1.00\times$ & 7247 & 3253 & $2.23\times$ \\
+    16 & 219 & 237 & $1.08\times$ & 7030 & 3785 & $1.86\times$ \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\section{Scaling: max ASU size and inference time vs. number of GPUs}
+\label{sec:results-scaling}
+
+To validate the extent of applicability of our proposed CP techniques, 
+we performed a scaling analysis on the task of designing proteins with icosahedral
+point-group symmetry. Specifically, we target the icosahedral symmetry and sweep the 
+amino-acid length of the asymmetric subunit (ASU) until inference runs out of memory (OOM)
+for a fixed number of GPUs $P$. \Cref{tab:scaling} shows these values and the inference 
+time for that specific run right before reaching OOM error. Unless explicitly mentioned,
+all experiments in this subsection use HG200 GPUs with 95\,GB memory and a batch size of
+one.
+
+\subsection{Maximum ASU size.}
+With either sharding scheme, the dominant quadratic pair tracks are distributed across 
+the device mesh, so the memory ceiling is set primarily by the \emph{aggregate} available 
+memory rather than by a single-device limit.  We believe this is the reason why we observe 
+this value of max ASU length before OOM to be similar, independently of the sharding scheme
+used.  Empirically, the maximum feasible ASU length increases with $P$ with the expected 
+square-root trend predicted in \Cref{sec:1d,sec:2d}: as $P$ grows linearly while all the 
+GPUs are maximally used, each device stores a quadratically smaller proportion of the 
+growing pair tensors. 
+
+\subsection{Inference time.}
+While the two schemes reach comparable memory ceilings at a given $P$, their wall-clock 
+scaling differs. The 1D scheme performs a single \textsc{AllGather} of the single-track 
+activations after each attention block (\cref{sec:1d}), which introduces a latency cost 
+that grows with cluster size and impacts runtime. The 2D scheme replaces global gathers 
+with $\sqrt{P}$-step ring communication over smaller shards and overlaps these shifts with 
+local computation (\cref{sec:2d}), yielding better time scaling in practice. This effect is 
+reflected in \Cref{tab:scaling}, where 2D CP achieves lower per-step inference time at the 
+same $P$, often finishing inference in around half the time with respect to the 1D inference.
+
+% Ensure Table~\ref{tab:scaling} is placed before the next two-column figure.
+
+
+\subsection{Designing octahedral nanoparticles on small GPUs}
+\label{sec:results-democratization}
+
+Octahedral protein cages are a promising but underexplored therapeutic scaffold class: their
+rigid, multivalent geometry is suited to higher-order receptor engagement, and their 
+interior volume can encapsulate biologic cargoes. Despite this potential, only a few 
+\emph{de novo} octahedral cages have been characterised in therapy-relevant cell-based 
+functional assays~\cite{divine_designed_2021, yang_computational_2024}, and as noted in 
+\cref{sec:introduction}, the memory cost of jointly sampling such large symmetric assemblies 
+has been a practical barrier to broadening this design space.
+
+To test whether Design-CP lifts this barrier on commodity hardware, we repeated the 
+scaling protocol of \cref{sec:results-scaling} for octahedral targets, this time using a 
+small cluster of workstation-grade NVIDIA RTX~A4000 GPUs ($16$\,GB per device,
+${\sim}6\times$ less per-device memory than the HG200 GPUs used so far) and we report the 
+results in \cref{app:O24_scaling_and_metrics}. In practice, the 2D sharding scheme allowed 
+us to sample full octahedral assemblies up to $178$ residues per chain (with $24$ chains, 
+this means modelling $4{,}272$ residues total) on $16$ A4000 GPUs 
+(\cref{fig:octahedral-mainfig}a), a per-chain size comparable to existing \emph{de novo} 
+octahedral nanoparticles~\cite{king_computational_2012}; we then evaluated $n=12$ such 
+designs against the same families of \emph{in silico} metrics used for the icosahedral 
+targets in \cref{sec:results-quality}. Additional metrics and a discussion of the scaling 
+sweep on this hardware are deferred to Appendix~\ref{app:O24_scaling_and_metrics}.
+
+\subsection{Backbone sanity tracks the icosahedral baseline.} 
+The backbone quality indicators (\cref{fig:octahedral-mainfig}b--e) are healthy and
+consistent with the icosahedral designs population: the per-chain count of chain breaks 
+concentrates at zero with a single outlier at $2$, the count of backbone heavy-atom clashes 
+is essentially zero across all designs (one outlier near $70$), the fraction of residues 
+assigned to a helix or strand element sits at a median of $\approx 0.65$, and the maximum 
+per-chain deviation of consecutive C$\alpha$--C$\alpha$ bond lengths from the canonical 
+$3.8$\,\AA{} value clusters tightly around $\approx 0.3$\,\AA{}, well below the 
+$0.75$\,\AA{} chain-break threshold. This last distribution is in fact noticeably tighter 
+than for the icosahedral chains, and might suggest that the lower oligomeric state 
+($24$ vs.\ $60$ subunits) imposes less geometric strain per chain.
+
+\subsection{Symmetric interfaces are well-formed.} 
+The two main symmetry-interface metrics shown in \cref{fig:octahedral-mainfig}f--g are 
+likewise healthy. The minimum C$\alpha$--C$\alpha$ distance between distinct chains sits 
+in the $\approx 4$--$10$\,\AA{} band, consistent with proper inter-subunit packing without 
+steric overlap, and the average number of C$\alpha$--C$\alpha$ contacts per inter-subunit 
+interface centres around $\approx 30$ with a positive tail beyond $60$. An example of 
+octahedral design is provided in \cref{fig:octahedral-mainfig}a, where the chains organise 
+into a closed, octahedrally symmetric cage. This confirms that the symmetrised trajectory 
+realises the intended point-group geometry with favourable in-silico metrics on commodity 
+GPUs.
+
+Overall, these results indicate that large-assembly protein design can be made feasible 
+on modest, widely available GPU hardware, lowering the barrier to entry for groups without 
+access to large-memory accelerators.
+
+
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{Octahedral_figure_main_text.png}
+  \caption{\textbf{Designing octahedral nanoparticles on workstation-grade GPUs.}
+   \textbf{a}, A representative Design-CP octahedral assembly with $176$ residues per 
+   chain ($24$ chains, $4{,}224$ residues total) generated on $16$ NVIDIA RTX~A4000 GPUs 
+   ($16$\,GB per device). \textbf{b--e}, Backbone-sanity metrics over $n=12$ such designs: 
+   \textbf{b} chain breaks, \textbf{c} backbone clashes, \textbf{d} non-loop fraction, 
+   \textbf{e} max CA deviation. \textbf{f--g}, Symmetry-interface metrics: \textbf{f} 
+   minimum inter-chain distance, \textbf{g} mean contacts per interface. Metric definitions
+    in Appendix~\ref{app:designability}; the remaining secondary-structure and contact 
+    metrics are reported in Appendix~\ref{app:O24_scaling_and_metrics}.}
+  \label{fig:octahedral}
+\end{figure}
+
+
+\section{Discussion}
+\label{sec:discussion}
+
+We introduced \emph{Design-CP}, two context-parallel inference strategies for RFDiffusion~3 
+that shard the quadratic token- and atom-pair representations across multiple GPUs while 
+preserving the model's architecture and weights. We characterised the memory ceilings and 
+strong-scaling behaviour of a lightweight 1D row-sharding scheme and a 2D grid scheme 
+(which requires a perfect-square GPU count $P$ to form a $\sqrt{P}\times\sqrt{P}$ mesh), 
+and found that 2D sharding achieves better wall-clock scaling in practice by overlapping 
+ring communication with computation.
+
+Beyond RFD3, the underlying approach is model-agnostic: any protein design model whose 
+inference is dominated by self-attention and other $\mathcal{O}(n^2)$ pairwise activations 
+can, in principle, adopt the same sharding patterns. This suggests that context parallelism
+is broadly applicable across modern design pipelines, which largely build on 
+Transformer-style attention mechanisms with pari-bias.
+
+We further showed that strong point-group symmetry constraints can make CP usable 
+\emph{out of the box} for end-to-end all-atom design of large protein nanoparticles 
+without retraining or fine-tuning. Prior work on context-parallelism for structure 
+prediction (e.g., Fold-CP~\cite{lin_fold-cp_2026}) indicates that scaling inference to 
+very large complexes can be limited by out-of-distribution generalisation once inputs exceed 
+the model's native training regime. Our results refine this picture: for highly symmetric 
+assemblies, symmetrised sampling collapses the effective degrees of freedom to a single ASU 
+while still modelling the correct inter-subunit geometry, enabling CP to scale to full 
+icosahedral and octahedral assemblies while preserving promising \emph{in silico} backbone-sanity 
+and symmetry-interface metrics (\cref{sec:results-quality,sec:results-democratization}). We 
+also demonstrated that the same approach enables \emph{de novo}
+design of octahedral nanoparticles on a small cluster of workstation-grade GPUs, indicating 
+a practical path towards democratising large-assembly protein design.
+
+A key limitation is that pushing beyond the native training crop can still introduce 
+distribution shift and degrade outputs for highly asymmetric targets. Future work could 
+therefore explore training or fine-tuning design models with longer contexts and/or explicit 
+context-parallelism in the training loop. This is now not a priorit for this project, as our
+immediate goal is to design large symmetric assemblies for vaccine applications, but it is a 
+natural next step for the broader design community.
+
+% as well as experimental validation of the d
+% esigned assemblies to assess how in-silico quality metrics translate to expression, 
+% stability, and correct self-assembly \emph{in vitro}.

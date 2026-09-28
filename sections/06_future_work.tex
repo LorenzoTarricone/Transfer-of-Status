@@ -10,18 +10,58 @@
 % pgfgantt block at the end to match your real milestones and dates.
 % -----------------------------------------------------------------------------
 
-Having shown that we can model a whole symmetric assembly end to end
-(Chapters~\ref{ch:methods}--\ref{ch:results}), my research programme now
-\emph{expands}: from a precise, near-term objective to a broad, multi-year agenda.
-The immediate goal is sharply defined; each subsequent direction opens the problem
-a little wider.
+Having established that whole symmetric assemblies can be modelled end to end
+(Chapters~\ref{ch:methods}--\ref{ch:results}), I now describe the work that
+builds on this. Section~\ref{sec:experimental-validation} concerns experimental
+validation of the designs, Section~\ref{sec:motif-scaffolding} the extension
+from unconditional to symmetric motif scaffolding generation, and
+Section~\ref{sec:shape-control} finer control over assembly shape.
+Section~\ref{sec:broad-agenda} places these in the context of the wider research
+programme, and Section~\ref{sec:gantt} gives the timeline.
+
+
+\section{From \emph{in silico} metrics to experimental validation}
+\label{sec:experimental-validation}
+
+The results of Chapter~\ref{ch:results} are entirely computational. The metrics
+of Section~\ref{sec:evaluation} establish that the generated particles are
+geometrically sound and that their designed interfaces are comparable to those
+of a natural reference particle. They do not establish that a design will
+express solubly, fold, or assemble into the intended cage. The usual substitute,
+refolding with a structure predictor, is unreliable at this chain count
+\parencite{bryant_predicting_2022}, which is why it was avoided here, and
+designed assemblies that satisfy computational criteria have been found to be
+structurally flexible or oligomorphic when characterised experimentally
+\parencite{khmelinskaia_local_2025}. The real value of this proposed method should 
+be assessed through experimental validation.
+
+I will spend part of the 2026/27 academic year at the Baker Lab, where the relevant
+experimental pipeline is well established. The work there will begin with a
+small design campaign: generating a library of assemblies, designing sequences
+with ProteinMPNN \parencite{dauparasRobustDeepLearning2022}, filtering on the
+metrics of Section~\ref{sec:evaluation}, and expressing the candidates that
+survive. Characterisation would proceed in order of increasing cost, beginning
+with chromatography and LC--MS to confirm subunit identity and an elution
+profile consistent with an assembled particle, followed by negative-stain
+electron microscopy to assess morphology, and single-particle cryo-EM for the
+most promising candidates. How much of this can be completed within the year
+will depend on expression yields and on the number of designs that clear the
+early filters.
+
+The campaign would also yield matched computational and experimental outcomes
+for assemblies generated end to end rather than docked from pre-computed
+building blocks, which is not something currently available for this class of
+protiens. Such data would indicate whether the inexpensive geometric filters used
+in this report track successful assembly in practice, and would inform the
+broader programme described in Section~\ref{sec:broad-agenda}.
+
 
 \section{From unconditional to conditional generation: symmetric motif scaffolding}
 \label{sec:motif-scaffolding}
 
 Design-CP as reported performs \emph{unconditional} generation: it produces a
 symmetric particle, but not a particle built around a \emph{specific} antigen. The
-natural next step is \emph{conditional} generation, holding one or more functional
+natural next step is \emph{conditional} generation, holding many copies of one or more functional
 motifs (the antigen, or an epitope we wish to display) fixed while the model
 designs a symmetric scaffold that presents them. In the symmetric setting this is
 \emph{symmetric motif scaffolding}: the standard motif-scaffolding problem
@@ -29,12 +69,8 @@ designs a symmetric scaffold that presents them. In the symmetric setting this i
 recently generalised to atom-level motifs without known sequence indices
 \parencite{ahern_atom_2025}, composed with the
 point-group machinery of Section~\ref{sec:rfd3-symmetry}, so that a motif placed in
-one ASU is presented at every symmetry-equivalent position on the particle. Prior
-work on hallucinating cyclic symmetric oligomers
-\parencite{wickyHallucinatingSymmetricProtein2022}, scaffolding at the scale of the
-structural universe \parencite{lin_out_2024}, and integrating functional motifs
-into designed nanoparticles \parencite{haas_novo_2026} indicates this is within
-reach once the whole-assembly modelling barrier is removed. This work will be
+one ASU (or at symmetric interface between some ASUs) is presented at every symmetry-equivalent 
+position on the particle. This work will be
 carried out in collaboration with the Baker Lab during a visit there in the next
 academic year (2026/27), giving direct access to their design and experimental
 pipelines for validating conditionally designed immunogens.
@@ -42,22 +78,28 @@ pipelines for validating conditionally designed immunogens.
 \section{Greater control over the shape of generated assemblies}
 \label{sec:shape-control}
 
-A second direction is to gain finer control over the \emph{shape} of the generated
-proteins and assemblies (their overall size, envelope and geometry) independently
-of, or jointly with, the motif constraint. Existing generative models already offer
-some spatial and shape conditioning: Chroma exposes programmable shape and
-symmetry constraints \parencite{ingrahamIlluminatingProteinSpace2023}, ProtComposer
-conditions structure generation on 3D ellipsoids
-\parencite{stark_protcomposer_2025}, and ProxelGen generates proteins as 3D
-densities \parencite{faltings_proxelgen_2025}; related work steers a pretrained
-protein diffusion model at inference time to match experimental measurements such
-as cryo-EM density maps, either by guiding the atomic coordinates directly
-\parencite{raghu_multiscale_2025} or by optimising the model's conditional
-embeddings \parencite{li_robust_2026}. I plan to improve on this spatial/shape conditioning so
-that a designer can specify the target envelope of a nanoparticle (for instance to
-match a desired antigen valency or a delivery constraint) and have the model
-respect it, ideally composed with the symmetric-scaffolding capability of
-Section~\ref{sec:motif-scaffolding}.
+
+Particle radius is already controllable within the framework of
+Chapter~\ref{ch:methods}, but finer geometric features are not. Two are of
+particular interest. First, the generated assemblies show pores at some
+interfaces that arise as a by-product of the design rather than as a specified
+feature. Second, natural capsid subunits frequently possess extended arms that
+interdigitate with neighbouring subunits, a feature with clear structural
+consequences: the N-terminal arm forms the $\beta$-annulus underlying
+quasi-equivalence in $T{=}3$ plant viruses \parencite{harrison_protein_2017}, and
+C-terminal arm exchange allows papillomavirus and polyomavirus pentamers to
+occupy hexavalent positions in a $T{=}7$ lattice
+\parencite{TODO_liddington_sv40}. Since the training distribution is dominated
+by globular monomers, such subunits fall outside what the model readily
+produces.
+
+Both features are geometric, which suggests shape conditioning as a route to
+controlling them. Building on existing spatial conditioning methods
+\parencite{ingrahamIlluminatingProteinSpace2023,stark_protcomposer_2025,faltings_proxelgen_2025,raghu_multiscale_2025,li_robust_2026},
+I plan to let the designer specify a target envelope that the model must
+respect, which would make pore size and position explicit design variables and
+allow non-globular subunits to be requested directly.
+
 
 \section{A broader agenda: designing large symmetric protein assemblies}
 \label{sec:broad-agenda}
@@ -75,9 +117,7 @@ flexibility and oligomorphism observed in designed assemblies
 \parencite{khmelinskaia_local_2025}.
 The space of targets is correspondingly wide, from vaccine scaffolds to
 mechanically coupled molecular machines \parencite{courbet_computational_2022} and
-allosterically switchable assemblies \parencite{pillai_novo_2024}. This is the
-outermost ring of the funnel: a general research direction that the concrete
-projects above both feed into and help define.
+allosterically switchable assemblies \parencite{pillai_novo_2024}.
 
 \section{Timeline and milestones}
 \label{sec:gantt}
