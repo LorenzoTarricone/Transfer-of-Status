@@ -74,13 +74,15 @@
   pdftitle={Scaling De Novo Design of Protein Nanoparticle Vaccines},
   pdfauthor={Lorenzo Tarricone}}
 
+%------------------------------- Clever references ----------------------------
+% Provides \cref/\Cref used throughout the included sections.
+\usepackage[nameinlink,capitalize,noabbrev]{cleveref}
+
 %------------------------------- Bibliography ---------------------------------
-% Author-year style (biblatex + biber), matching the confirmed preference.
-% uniquename=false: without it biblatex prefixes surnames with initials whenever
-% two cited authors share a surname (e.g. "Y. Lin" vs "D. Lin"), which clutters
-% the in-text citations; surnames alone are enough here.
+% Author-year style (biblatex + biber).
+% natbib=true enables \citep/\citet aliases used in some sections.
 \usepackage[backend=biber,style=authoryear,maxcitenames=2,
-            giveninits=true,uniquename=false,sorting=nyt]{biblatex}
+            giveninits=true,uniquename=false,sorting=nyt,natbib=true]{biblatex}
 \addbibresource{references.bib}
 
 %==============================================================================
@@ -137,9 +139,10 @@
 
 \input{sections/01_introduction}
 \input{sections/02_computational_design}
-\input{sections/03_methods}
-\input{sections/04_results_discussion}
-\input{sections/05_future_work}
+\input{sections/03_current_memory_reduction_methods}
+\input{sections/04_methods}
+\input{sections/05_results_discussion}
+\input{sections/06_future_work}
 \clearpage % flush any remaining floats so the Gantt chart stays before references
 
 %------------------------------- References -----------------------------------
@@ -147,6 +150,6 @@
 
 %------------------------------- Appendix -------------------------------------
 \appendix
-\input{sections/06_appendix}
+\input{sections/07_appendix}
 
 \end{document}
