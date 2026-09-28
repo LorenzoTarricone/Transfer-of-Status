@@ -41,7 +41,7 @@ the dominant factor is the symmetry prior rather than the length of the modelled
 chains.
 
 We attribute this effect to the symmetry sampling mechanism described in
-Section~\ref{sec:rfd3-symmetry}: at each symmetrised denoising step the network
+Section~\ref{sec:rfd3-prelim}: at each symmetrised denoising step the network
 performs a full forward pass over all atoms of the assembly, but only the
 asymmetric subunit (ASU) of its prediction is retained, and the remaining subunits
 are overwritten by deterministic group-operation copies of that ASU. The sampler
@@ -190,17 +190,17 @@ the device mesh, so the memory ceiling is set primarily by the \emph{aggregate} 
 memory rather than by a single-device limit.  We believe this is the reason why we observe 
 this value of max ASU length before OOM to be similar, independently of the sharding scheme
 used.  Empirically, the maximum feasible ASU length increases with $P$ with the expected 
-square-root trend predicted in \Cref{sec:1d,sec:2d}: as $P$ grows linearly while all the 
+square-root trend predicted in \Cref{sec:cp-1d,sec:cp-2d}: as $P$ grows linearly while all the 
 GPUs are maximally used, each device stores a quadratically smaller proportion of the 
 growing pair tensors. 
 
 \subsection{Inference time.}
 While the two schemes reach comparable memory ceilings at a given $P$, their wall-clock 
 scaling differs. The 1D scheme performs a single \textsc{AllGather} of the single-track 
-activations after each attention block (\cref{sec:1d}), which introduces a latency cost 
+activations after each attention block (\cref{sec:cp-1d}), which introduces a latency cost 
 that grows with cluster size and impacts runtime. The 2D scheme replaces global gathers 
 with $\sqrt{P}$-step ring communication over smaller shards and overlaps these shifts with 
-local computation (\cref{sec:2d}), yielding better time scaling in practice. This effect is 
+local computation (\cref{sec:cp-2d}), yielding better time scaling in practice. This effect is 
 reflected in \Cref{tab:scaling}, where 2D CP achieves lower per-step inference time at the 
 same $P$, often finishing inference in around half the time with respect to the 1D inference.
 
@@ -215,7 +215,7 @@ rigid, multivalent geometry is suited to higher-order receptor engagement, and t
 interior volume can encapsulate biologic cargoes. Despite this potential, only a few 
 \emph{de novo} octahedral cages have been characterised in therapy-relevant cell-based 
 functional assays~\cite{divine_designed_2021, yang_computational_2024}, and as noted in 
-\cref{sec:introduction}, the memory cost of jointly sampling such large symmetric assemblies 
+\cref{ch:current-memory-reduction-methods}, the memory cost of jointly sampling such large symmetric assemblies 
 has been a practical barrier to broadening this design space.
 
 To test whether Design-CP lifts this barrier on commodity hardware, we repeated the 
@@ -225,14 +225,14 @@ ${\sim}6\times$ less per-device memory than the HG200 GPUs used so far) and we r
 results in \cref{app:O24_scaling_and_metrics}. In practice, the 2D sharding scheme allowed 
 us to sample full octahedral assemblies up to $178$ residues per chain (with $24$ chains, 
 this means modelling $4{,}272$ residues total) on $16$ A4000 GPUs 
-(\cref{fig:octahedral-mainfig}a), a per-chain size comparable to existing \emph{de novo} 
+(\cref{fig:octahedral}a), a per-chain size comparable to existing \emph{de novo} 
 octahedral nanoparticles~\cite{king_computational_2012}; we then evaluated $n=12$ such 
 designs against the same families of \emph{in silico} metrics used for the icosahedral 
-targets in \cref{sec:results-quality}. Additional metrics and a discussion of the scaling 
+targets in \cref{sec:icosahedral}. Additional metrics and a discussion of the scaling 
 sweep on this hardware are deferred to Appendix~\ref{app:O24_scaling_and_metrics}.
 
 \subsection{Backbone sanity tracks the icosahedral baseline.} 
-The backbone quality indicators (\cref{fig:octahedral-mainfig}b--e) are healthy and
+The backbone quality indicators (\cref{fig:octahedral}b--e) are healthy and
 consistent with the icosahedral designs population: the per-chain count of chain breaks 
 concentrates at zero with a single outlier at $2$, the count of backbone heavy-atom clashes 
 is essentially zero across all designs (one outlier near $70$), the fraction of residues 
@@ -244,12 +244,12 @@ than for the icosahedral chains, and might suggest that the lower oligomeric sta
 ($24$ vs.\ $60$ subunits) imposes less geometric strain per chain.
 
 \subsection{Symmetric interfaces are well-formed.} 
-The two main symmetry-interface metrics shown in \cref{fig:octahedral-mainfig}f--g are 
+The two main symmetry-interface metrics shown in \cref{fig:octahedral}f--g are 
 likewise healthy. The minimum C$\alpha$--C$\alpha$ distance between distinct chains sits 
 in the $\approx 4$--$10$\,\AA{} band, consistent with proper inter-subunit packing without 
 steric overlap, and the average number of C$\alpha$--C$\alpha$ contacts per inter-subunit 
 interface centres around $\approx 30$ with a positive tail beyond $60$. An example of 
-octahedral design is provided in \cref{fig:octahedral-mainfig}a, where the chains organise 
+octahedral design is provided in \cref{fig:octahedral}a, where the chains organise 
 into a closed, octahedrally symmetric cage. This confirms that the symmetrised trajectory 
 realises the intended point-group geometry with favourable in-silico metrics on commodity 
 GPUs.
@@ -302,7 +302,7 @@ the model's native training regime. Our results refine this picture: for highly 
 assemblies, symmetrised sampling collapses the effective degrees of freedom to a single ASU 
 while still modelling the correct inter-subunit geometry, enabling CP to scale to full 
 icosahedral and octahedral assemblies while preserving promising \emph{in silico} backbone-sanity 
-and symmetry-interface metrics (\cref{sec:results-quality,sec:results-democratization}). We 
+and symmetry-interface metrics (\cref{sec:icosahedral,sec:results-democratization}). We 
 also demonstrated that the same approach enables \emph{de novo}
 design of octahedral nanoparticles on a small cluster of workstation-grade GPUs, indicating 
 a practical path towards democratising large-assembly protein design.

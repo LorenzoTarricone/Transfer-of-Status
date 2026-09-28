@@ -24,7 +24,7 @@ backbone unit (N, C$\alpha$, C) and one of twenty side chains, so proteins diffe
 from one another in the lenght of the chain and the order of those side chains along
 the chain, known as the \emph{sequence}. In a given environment the sequence largely determines the
 three-dimensional structure that the chain adopts
-\parencite{anfinsen_principles_1973}. That structure is conventionally described
+\parencite{anfinsenPrinciplesThatGovern1973}. That structure is conventionally described
 at four levels (Figure~\ref{fig:protein-structure}). The sequence itself is the
 \emph{primary} structure. Hydrogen-bonding patterns between nearby backbone atoms
 give two \emph{secondary} structure motifs, namely $\alpha$-helices and
@@ -41,7 +41,7 @@ forming a \emph{quaternary} assembly.
     (secondary structure), which pack into the fold of a single polypeptide chain
     (tertiary structure); several chains then associate through non-covalent
     interfaces into an assembly of subunits (quaternary structure). Adapted from
-    \textcite{rashid_protein_2015}.}
+    \textcite{rashidProteinPreliminariesStructure2015}.}
   \label{fig:protein-structure}
 \end{figure}
 
@@ -72,7 +72,7 @@ multi-component assembly.
     (PDB~6CHL).
     \textbf{(e)} Icosahedral $I$: satellite tobacco necrosis virus (PDB~1STM).
     \textbf{(f)} Helical: Rad51 filament (PDB~6DJO).
-    Adapted from \textcite{rcsb_symmetry}.}
+    Adapted from the RCSB PDB ``Protein Symmetry'' resource.}
   \label{fig:symmetries}
 \end{figure}
 
@@ -80,15 +80,15 @@ multi-component assembly.
 \label{sec:pnp-vaccines}
 
 The clinical success of mRNA vaccines during the SARS-CoV-2 pandemic
-\parencite{polack_safety_2020} established nucleic-acid delivery as a fast,
+\parencite{polackSafetyEfficacyBNT162b22020} established nucleic-acid delivery as a fast,
 programmable vaccine modality: manufacture is sequence-independent and scalable
-\parencite{pardi_mrna_2018}, and clinical-grade material for mRNA-1273 entered
+\parencite{pardiMRNAVaccinesNew2018}, and clinical-grade material for mRNA-1273 entered
 production five days after the SARS-CoV-2 sequence was released, reaching a
-phase~1 trial 66 days later \parencite{corbett_sars-cov-2_2020}. This platform 
+phase~1 trial 66 days later \parencite{corbettSARSCoV2MRNAVaccine2020}. This platform 
 has, however, innately limited immunogenicity. An antigen presented as a
 soluble monomer is often only weakly immunogenic, because the size, geometry and
 repetitiveness with which an antigen is displayed largely govern how strongly it
-engages the immune system \parencite{bachmann_vaccine_2010}.
+engages the immune system \parencite{bachmannVaccineDeliveryMatter2010}.
 
 A complementary strategy is therefore to present the antigen not as a soluble
 monomer but arrayed on the surface of a self-assembling (often symmetric) \emph{protein
@@ -150,7 +150,7 @@ candidate sequences were threaded onto a target backbone and scored with an
 energy function approximating the physics of folding, with the conformational and
 sequence search handled by algorithms such as those in the Rosetta suite. This
 paradigm produced landmark results, including the first de novo globular fold
-designed to atomic-level accuracy \parencite{kuhlman_design_2003}, de novo enzymes
+designed to atomic-level accuracy \parencite{kuhlmanDesignNovelGlobular2003a}, de novo enzymes
 for reactions with no natural catalyst
 \parencite{rothlisberger_kemp_2008,siegel_computational_2010} and picomolar
 miniprotein inhibitors of SARS-CoV-2 \parencite{cao_novo_2020}.
@@ -206,7 +206,7 @@ in-silico design of VHHs and scFvs~\cite{bennett_atomically_2026}. \\
 
 The architecure of all the most uses protein structure prediction and design models is based on 
 a common architectural module, called \emph{transformer}. A transformer 
-\parencite{vaswani_attention_2017} is a neural network composed of
+\parencite{vaswaniAttentionAllYou2017} is a neural network composed of
 repeated blocks. It operates on a sequence of $n$ \emph{tokens}, each carrying a
 feature vector of width $d$. To give an example, in the models used in this
 report a token corresponds to an amino acid or an atom.
@@ -232,7 +232,7 @@ have expanded the same basic structure of the encoder block here described.
     normalisation. The embeddings, the positional encodings and the final linear
     and softmax head belong to the sequence-to-sequence task of the original work
     rather than to the block itself. Reproduced from
-    \textcite{vaswani_attention_2017}.}
+    \textcite{vaswaniAttentionAllYou2017}.}
   \label{fig:transformer}
 \end{figure}
 
@@ -278,7 +278,7 @@ normalisation described above.
   \includegraphics[width=\linewidth]{Attention.png}
   \caption{\textbf{One attention sub-layer, unrolled.} The multi-head attention
     block at the top is reproduced from the original transformer paper
-    \parencite{vaswani_attention_2017}; the panel below expands it for a single
+    \parencite{vaswaniAttentionAllYou2017}; the panel below expands it for a single
     head and includes the residual connection and the layer normalisation that
     close the sub-layer. Tensors are shaded by role and annotated with their
     dimensions; the symbols are those used in the text.}

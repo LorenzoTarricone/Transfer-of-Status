@@ -28,7 +28,7 @@ differs.
 We build on RFdiffusion3 (RFD3) \parencite{butcher_novo_2025}, an all-atom denoising-diffusion model whose
 diffusion module follows the AlphaFold3 design
 \parencite{abramsonAccurateStructurePrediction2024} and which is
-built on the AtomWorks framework \parencite{corley_accelerating_2025}. At each denoising step RFD3 jointly represents a
+built on the AtomWorks framework \parencite{corleyAcceleratingBiomolecularModeling2025}. At each denoising step RFD3 jointly represents a
 structure at two resolutions. A \emph{token} track carries a single
 representation $S \in \mathbb{R}^{I \times c_s}$ and a pair representation
 $Z \in \mathbb{R}^{I \times I \times c_z}$ over $I$ tokens; an \emph{atom} track
@@ -154,7 +154,7 @@ $(r,c)\leftrightarrow(c,r)$ transpose to align them with the query rows. At each
 ring step, a GPU computes attention between its resident $\mathbf{Q}$ rows and the
 currently visited $\mathbf{K}$/$\mathbf{V}$ shard, using the local bias quadrant,
 and merges the partial output into a running total via an online softmax
-\parencite{milakov_online_2018,liu_ring_2023}. All tensors are represented as
+\parencite{milakov_online_2018,liuRingAttentionBlockwise2023}. All tensors are represented as
 PyTorch \texttt{DTensor}s; parameters are replicated across the grid.
 
 Asymptotically, per-device pair-track memory is $\mathcal{O}(I^{2}/P)$, the same
@@ -176,7 +176,7 @@ that devices can be arranged as a $\sqrt{P}\times\sqrt{P}$ mesh.
 % \section{Composition of symmetry with context parallelism}
 % \label{sec:symmetry-cp}
 
-% In both schemes the symmetrisation of Section~\ref{sec:rfd3-symmetry} is executed
+% In both schemes the symmetrisation of Section~\ref{sec:rfd3-prelim} is executed
 % redundantly on every rank rather than being distributed: each device applies the
 % point-group operations to full-size coordinates and obtains the same result, so
 % every rank follows an identical sampling trajectory. The two schemes differ in how
@@ -238,7 +238,7 @@ computed between the ASU and its eight nearest icosahedral neighbours. Where a
 natural reference particle is available we overlay it in every panel; for
 icosahedral designs we use lumazine synthase from \emph{Aquifex aeolicus}
 (PDB~1NQX, biological assembly~1: a 60-subunit $T{=}1$ icosahedral capsid)
-\parencite{zhang_structure-based_2003}, selected as a naturally occurring
+\parencite{zhangStructurebasedModelReaction2003}, selected as a naturally occurring
 nanoparticle that has previously been employed as a vaccine scaffold
 \parencite{ladenstein_second_2020,joseph_lumazine_2025}. Precise definitions, with
 every threshold, are collected in Appendix~\ref{app:metric-defs}.

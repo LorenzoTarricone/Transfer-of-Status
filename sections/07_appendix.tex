@@ -4,13 +4,17 @@
 \chapter{Extended in-silico metrics}
 \label{app:extended}
 
-This appendix collects the full metric distributions summarised in
-Chapter~\ref{ch:results}. Each box plot shows the median, interquartile range and
-whiskers over the design set, with the lumazine-synthase reference
-(PDB~1NQX, dotted) shown where applicable.
+This appendix collects the metric definitions, implementation details and full
+metric distributions deferred from Chapters~\ref{ch:methods}
+and~\ref{ch:results}, together with the octahedral scaling sweep of
+Section~\ref{app:O24_scaling_and_metrics}. Each box plot shows the median,
+interquartile range and whiskers over the design set, with the
+lumazine-synthase reference (PDB~1NQX, dotted) shown where applicable.
 
 \section{Metric definitions}
 \label{app:metric-defs}
+\label{app:designability}% alias: Figure~\ref{fig:octahedral} cites the metric
+                         % definitions under this name.
 
 All quantities are computed directly from the generated all-atom coordinates of
 the symmetrised assembly; no external structure-prediction oracle is used. The
@@ -25,13 +29,20 @@ worst such departure in a design, reported as a continuous summary rather than a
 count. \emph{Backbone clashes} are heavy-atom pairs drawn from residues at least
 two apart in sequence and closer than $\tau_\text{clash}=\SI{1.5}{\angstrom}$,
 restricted to the backbone atoms $\{\text{N},\text{C}\alpha,\text{C}\}$, which
-have no rotameric freedom with which to relieve an overlap. The \emph{non-loop
-fraction} is the proportion of residues assigned to a helix or a strand by the
-P-SEA annotator \parencite{labesse_p-sea_1997}. We also report the radius of
-gyration and the amino-acid composition as secondary filters.
+have no rotameric freedom with which to relieve an overlap; the corresponding
+side-chain variant is much noisier and is reported only as a lower bound on
+clash density. The \emph{non-loop fraction} is the proportion of residues
+assigned to a helix or a strand by the P-SEA annotator
+\parencite{labesse_p-sea_1997}, as implemented in Biotite's
+\texttt{annotate\_sse}. As secondary filters we also report the radius of
+gyration, the separate helix and sheet fractions, the number of
+secondary-structure elements from the same annotation, and the per-residue
+amino-acid composition, in particular the alanine and glycine content, where a
+biased composition often signals a pathological design.
 
 \paragraph{Symmetric-interface sanity.}
-These use the full symmetrised complex, and all distances are
+These use the full symmetrised complex, excluding any atom belonging to a fixed
+or unsymmetrised motif, and all distances are
 C$\alpha$--C$\alpha$. Three thresholds apply: a hard inter-subunit clash distance
 of \SI{3.5}{\angstrom}, a contact band of \SIrange{4.0}{10.0}{\angstrom}, and a
 proximity cutoff of \SI{15.0}{\angstrom} beyond which two subunits count as
@@ -43,9 +54,14 @@ inside the contact band, averaged over those interfaces. \emph{Minimum
 inter-chain distance} is the smallest such distance anywhere in the complex:
 values below roughly \SI{3.5}{\angstrom} indicate steric overlap, while values
 well above \SI{6}{\angstrom} indicate that the subunits never meet, which for a
-closed particle is itself a failure. The \emph{number of interfaces with
-contacts} flags assemblies in which one interface is effectively absent even
-though the mean is healthy.
+closed particle is itself a failure. The \emph{total interface contacts} is the
+unnormalised sum of the contact counts over all interfaces, while the
+\emph{number of interfaces with contacts} and the \emph{minimum contacts per
+interface} together flag assemblies in which one interface is effectively absent
+even though the mean is healthy. Finally, the \emph{minimum intra-ASU distance}
+is the smallest C$\alpha$--C$\alpha$ distance \emph{within} a single subunit,
+which catches intra-subunit overlap that the inter-subunit clash count cannot
+see.
 
 \section{Implementation notes}
 \label{app:implementation}
@@ -112,13 +128,75 @@ device at any point.
 \section{Icosahedral designs}
 \label{app:ico}
 
+The comparison in Figure~\ref{fig:icosahedral}b--e covers four panels: chain
+breaks, backbone clashes, non-loop fraction and maximum C$\alpha$ deviation.
+Figure~\ref{fig:ico-perchain} shows the full eight-panel version, adding helix
+fraction, sheet fraction, glycine content and the average number of
+secondary-structure elements per chain.
+
+\paragraph{Caveat on problem difficulty.}
+The two design problems are not of equal difficulty, and the comparison should be
+read with this asymmetry in mind. Each icosahedral chain is denoised inside a
+$12{,}600$-residue joint context, where its trajectory must remain
+self-consistent with the simultaneously denoised trajectories of $59$ symmetry
+mates and with all the inter-chain interfaces they form, whereas the monomer
+problem is a single $210$-residue chain comfortably inside RFD3's native
+$384$-token training crop. The icosahedral problem is therefore strictly harder
+per chain.
+
+\paragraph{Helix and sheet fraction.}
+The most prominent qualitative gap in Figure~\ref{fig:ico-perchain} appears in
+secondary-structure composition. Vanilla RFD3 monomers reproduce a helix/sheet
+balance close to that of the 1NQX reference: the helix fraction concentrates
+around a median of $\approx 0.47$ with a tight bulk against the 1NQX value of
+$0.47$, and the sheet fraction sits at a median of $\approx 0.18$ with a
+comparable spread, against $0.20$ for 1NQX. The Design-CP icosahedral designs, in
+contrast, are strongly $\beta$-biased: the helix fraction collapses near zero on
+the bulk of chains, with a few upper outliers, and the sheet fraction shifts
+upwards to a median of $\approx 0.5$ with a noticeably broader distribution.
+
+\paragraph{Number of secondary-structure elements.}
+Consistent with the helix/sheet shift, the average number of secondary-structure
+elements per chain rises from $\approx 13$ in the monomers to $\approx 16$ in the
+icosahedral designs, with the icosahedral distribution carrying a heavier upper
+tail; both populations include outliers, but only the icosahedral set reaches the
+upper twenties. At fixed chain length a higher element count mechanically implies
+shorter average elements, which is again consistent with the icosahedral chains
+preferring multiple short $\beta$-strands over a small number of long helices. We
+treat this as supportive evidence for the helix/sheet shift rather than an
+independent observation, and note that the metric is sensitive to the P-SEA
+assignment thresholds \parencite{labesse_p-sea_1997}.
+
+\paragraph{Amino-acid composition.}
+On amino-acid composition the two populations are closer to each other than on
+secondary structure. Alanine content is similar across both sets, with broadly
+overlapping distributions and medians of the same order, and is, as is typical
+for RFD3 \parencite{butcher_novo_2025}, slightly inflated relative to 1NQX in
+both cases; we do not read a meaningful difference between Design-CP ASUs and
+vanilla monomers on this axis. Glycine content, in contrast, is appreciably
+broader in the icosahedral designs ($\approx 0.10$--$0.25$, with sporadic high
+outliers) than in the monomers ($\approx 0.05$--$0.10$, very tightly
+concentrated), although the medians remain of the same order and within the
+typical range for natural proteins. The widened glycine spread is qualitatively
+consistent at the population level with the broader maximum
+C$\alpha$--C$\alpha$ deviation of Figure~\ref{fig:icosahedral}e, chains under
+greater inter-subunit strain relying more on backbone-flexible residues, but we
+flag this as a tentative association rather than a causal claim, since we have
+not tested whether the same chains drive both effects.
+
 \begin{figure}[h]
   \centering
   \includegraphics[width=\textwidth]{RFD3-vs-DesignCP.png}
-  \caption{Per-chain standard (backbone-sanity) metrics for the icosahedral
-    Design-CP designs (I60, $n{=}40$) against single-GPU RFD3 monomers ($n{=}40$)
-    and the 1NQX reference (the full version of
-    Figure~\ref{fig:icosahedral}\textbf{b--e}).}
+  \caption{\textbf{Per-chain comparison of Design-CP icosahedral designs against
+    vanilla RFD3 monomers (full eight panels).} Backbone-sanity and composition
+    metrics computed chain by chain on $n{=}40$ Design-CP icosahedral assemblies
+    ($60$ chains $\times\,210$ residues) and $n{=}40$ vanilla single-GPU RFD3
+    monomers of length $210$, with the lumazine-synthase reference (PDB~1NQX)
+    dotted in each panel. The first four panels reproduce
+    Figure~\ref{fig:icosahedral}\textbf{b--e}; the additional four (helix
+    fraction, sheet fraction, glycine content, average number of
+    secondary-structure elements) show the secondary-structure shift discussed
+    above.}
   \label{fig:ico-perchain}
 \end{figure}
 
@@ -139,8 +217,82 @@ device at any point.
 \end{figure}
 
 \clearpage
-\section{Octahedral designs}
+\section{Octahedral designs on workstation-grade GPUs}
+\label{app:O24_scaling_and_metrics}
 \label{app:oct}
+
+This section collects the material deferred from
+Section~\ref{sec:results-democratization}: the scaling sweep for octahedral
+targets on workstation-grade hardware, and the metric distributions not shown in
+the main-text figure.
+
+\subsection*{Maximum assembly size on RTX~A4000 GPUs}
+
+The sweep follows the protocol of Section~\ref{sec:results-scaling}: at a fixed
+device count we increase the ASU length until inference runs out of memory, and
+record the last feasible length. The only difference is the hardware. Each
+RTX~A4000 provides $16$\,GB of device memory against the
+$95$\,GB of a GH200, roughly a sixfold reduction per device, so even
+the aggregate memory of the whole A4000 cluster is below that of a single GH200.
+Because octahedral symmetry has order $24$, a given ASU length here corresponds
+to an assembly of $24$ chains rather than the $60$ of the icosahedral case, and
+the token and atom counts entering the quadratic pair tracks scale accordingly.
+
+On $16$ A4000s the 2D scheme reached a ceiling of $178$ residues per chain, that
+is $4{,}272$ residues over the full assembly, and this is the configuration used
+for the $n{=}12$ designs analysed below. Two points follow. First, the ceiling is
+set by aggregate rather than per-device memory, so the sixfold per-card deficit
+is largely recovered by the device count, and the per-chain sizes reached remain
+comparable to those of existing \emph{de novo} octahedral nanoparticles
+\parencite{king_computational_2012}. Second, the 2D scheme requires a
+perfect-square device count, so on a cluster of this size the usable
+configurations are $P\in\{1,4,9,16\}$ and $16$ is the largest available; the 1D
+scheme carries no such restriction and is the more practical choice at
+intermediate device counts on commodity hardware.
+
+\subsection*{Full metric distributions}
+
+Figures~\ref{fig:oct-des} and~\ref{fig:oct-symm} give the complete distributions
+over the $n{=}12$ octahedral designs for both metric families of
+Section~\ref{app:metric-defs}. The headline panels of
+Figure~\ref{fig:octahedral}b--g are reproduced there; we comment below only on
+the additional panels.
+
+\paragraph{Additional backbone-sanity panels.}
+The radius of gyration is tightly concentrated in the
+\SIrange{56.8}{57.4}{\angstrom} range, indicating a consistent per-chain envelope
+across the population. Helix and sheet fractions are both broad, with no
+dominant secondary-structure type within the population: the helix fraction
+spans $\approx 0$--$0.9$ with a median around $\approx 0.55$, and the sheet
+fraction spans $\approx 0$--$0.85$ with a median around $\approx 0.45$. This
+contrasts qualitatively with the icosahedral designs of
+Section~\ref{app:ico}, where the helix fraction collapses near zero. We interpret
+this as plausibly reflecting the lower oligomeric state ($24$ against $60$
+subunits), which gives the symmetrisation step less reason to favour extended
+$\beta$-sheets over helical packing, but caution that the sample size
+($n{=}12$) is small. Alanine content has a median of $\approx 0.25$ and is
+comparatively broad ($\approx 0.05$--$0.6$), while glycine content is tightly
+clustered around $\approx 0.05$--$0.10$, in line with the icosahedral population.
+
+\paragraph{Additional symmetry-interface panels.}
+The hard inter-subunit clash counts at both the ASU and complex levels are zero
+across the entire population, indicating that no design realises sterically
+forbidden inter-subunit contacts. The smallest intra-ASU C$\alpha$--C$\alpha$
+distance is centred at $\approx\SI{3.6}{\angstrom}$, matching the canonical
+C$\alpha$--C$\alpha$ spacing, with two low outliers at $\approx\SI{1.2}{\angstrom}$
+and $\approx\SI{2.4}{\angstrom}$ that flag designs with intra-ASU geometric
+strain. The number of interfaces showing contacts has a median of $\approx 55$,
+and the total number of interface contacts spans $\approx 200$--$3{,}700$ with a
+median of $\approx 1{,}700$. The minimum number of contacts per interface has a
+median near $1$, with two outliers at $\approx 25$ and $\approx 30$: some designs
+do contain a weak interface whose contact count drags the per-design minimum
+towards zero, which is a useful filter signal for downstream design campaigns.
+
+Across both families, the additional panels are consistent with the headline
+result of Section~\ref{sec:results-democratization}: octahedral designs sampled
+on commodity GPUs satisfy the same hard-failure criteria as the icosahedral
+baseline, the main qualitative difference being a more permissive
+secondary-structure distribution.
 
 \begin{figure}[h]
   \centering

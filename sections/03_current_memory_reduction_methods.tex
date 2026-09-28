@@ -2,7 +2,7 @@
 \label{ch:current-memory-reduction-methods}
 
 Recent all-atom generative models such as RFDiffusion 3~\cite{butcher_novo_2025} (RFD3), 
-which is inspired by the AlphaFold 3 architecture~\cite{abramson_accurate_2024} (AF3),
+which is inspired by the AlphaFold 3 architecture~\cite{abramsonAccurateStructurePrediction2024} (AF3),
 can in principle generate multimeric structures such as the symmetric assembly needed as scaffolds
 for nanoparticle vaccines. This is achieved by jointly modelling all chains with
 an atomistic level of precision and designing proteins with predefined point-group 
@@ -41,7 +41,7 @@ and values into SRAM-resident blocks while maintaining running softmax statistic
 \citep{milakov_online_2018}, building on the earlier observation that attention 
 admits a linear-memory implementation \citep{rabe_self-attention_2022}. 
 For architectures without pair representations, this suffices and motivates its 
-use in protein language models like ESM3 \citep{hayes_simulating_2025}, which 
+use in protein language models like ESM3 \citep{hayesSimulating500Million2025}, which 
 represent sequence, structure, and function as discrete tokens and condense 
 pairwise geometry into a single SE(3)-invariant geometric-attention block at 
 the input. Flash‑IPA \citep{liu_flash_2025} and FlashBias \citep{wu_flashbias_2025} 
@@ -72,7 +72,7 @@ steady-state ($\mathcal{O}(I^2/P)$, where $P$ is the total number of devices) sh
 
 Fold-CP \citep{lin_fold-cp_2026} generalises axis sharding to a full two-dimensional 
 context-parallel strategy for AF3-class models (implementing it for 
-Boltz-2~\citep{passaro_boltz-2_2025}), extending Ring Attention~\citep{liu_ring_2023} 
+Boltz-2~\citep{passaroBoltz2AccurateEfficient2025}), extending Ring Attention~\citep{liuRingAttentionBlockwise2023} 
 into a Cannon-style 2D ring tailored to dense triangular updates, while window-batched
 atom attention is handled by a complementary shardwise kernel that keeps each 
 window's attention local to its rank. The pair tensor is tiled over a 
