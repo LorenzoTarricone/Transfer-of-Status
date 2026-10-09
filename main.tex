@@ -69,6 +69,7 @@
 \usepackage{pgfgantt}
 
 %------------------------------- Hyperlinks -----------------------------------
+\usepackage{csquotes}
 \usepackage[hidelinks]{hyperref}
 \hypersetup{
   pdftitle={Scaling De Novo Design of Protein Nanoparticle Vaccines},
@@ -89,6 +90,18 @@
 % (Some styles print this via the url+urldate macro, so we disable it there too.)
 \AtEveryBibitem{\clearfield{urldate}}
 \renewbibmacro*{url+urldate}{\printfield{url}}
+
+% Suppress Zotero export noise that the author-year style would otherwise print:
+% the language tag ("en."), ISSNs, and the free-text note field (which carries
+% strings such as "Pages: ... Section: New Results" on bioRxiv entries).
+\AtEveryBibitem{\clearlist{language}}
+\AtEveryBibitem{\clearfield{issn}}
+\AtEveryBibitem{\clearfield{note}}
+% Where a DOI is present it already resolves the item, so drop the duplicate URL.
+\AtEveryBibitem{\iffieldundef{doi}{}{\clearfield{url}}}
+% "Publisher:" is informative for books and preprint servers, but not for journal
+% articles, where the journal name already identifies the venue.
+\AtEveryBibitem{\ifentrytype{article}{\clearlist{publisher}}{}}
 
 %==============================================================================
 \begin{document}

@@ -17,9 +17,10 @@ changes how intermediate activations are partitioned and communicated, but does
 not alter the learned parameters of RFD3. This makes it immediately applicable to
 pretrained checkpoints, but it also means that when context parallelism is used to
 exceed RFD3's native crop limits, the model is sampled outside the regime it was
-trained on ($384$ tokens and $5{,}000$ atoms according to the SI of
-\parencite{butcher_novo_2025}). In practice, we find that this distribution shift
-can degrade sample quality when the target displays limited.
+trained on: $384$ tokens and $5{,}000$ atoms, according to the supplementary
+material of \textcite{butcher_novo_2025}. In practice, we find that this
+distribution shift can degrade sample quality when the target displays limited
+symmetry.
 
 Figure~\ref{fig:large-designs}b illustrates the effect qualitatively: when the
 number of atoms and tokens modelled is much higher than RFD3 saw during training,
@@ -214,7 +215,7 @@ Octahedral protein cages are a promising but underexplored therapeutic scaffold 
 rigid, multivalent geometry is suited to higher-order receptor engagement, and their 
 interior volume can encapsulate biologic cargoes. Despite this potential, only a few 
 \emph{de novo} octahedral cages have been characterised in therapy-relevant cell-based 
-functional assays~\cite{divine_designed_2021, yang_computational_2024}, and as noted in 
+functional assays~\parencite{divine_designed_2021,yang_computational_2024}, and as noted in 
 \cref{ch:current-memory-reduction-methods}, the memory cost of jointly sampling such large symmetric assemblies 
 has been a practical barrier to broadening this design space.
 
@@ -226,7 +227,7 @@ results in \cref{app:O24_scaling_and_metrics}. In practice, the 2D sharding sche
 us to sample full octahedral assemblies up to $178$ residues per chain (with $24$ chains, 
 this means modelling $4{,}272$ residues total) on $16$ A4000 GPUs 
 (\cref{fig:octahedral}a), a per-chain size comparable to existing \emph{de novo} 
-octahedral nanoparticles~\cite{king_computational_2012}; we then evaluated $n=12$ such 
+octahedral nanoparticles~\parencite{king_computational_2012}; we then evaluated $n=12$ such 
 designs against the same families of \emph{in silico} metrics used for the icosahedral 
 targets in \cref{sec:icosahedral}. Additional metrics and a discussion of the scaling 
 sweep on this hardware are deferred to Appendix~\ref{app:O24_scaling_and_metrics}.
@@ -251,7 +252,7 @@ steric overlap, and the average number of C$\alpha$--C$\alpha$ contacts per inte
 interface centres around $\approx 30$ with a positive tail beyond $60$. An example of 
 octahedral design is provided in \cref{fig:octahedral}a, where the chains organise 
 into a closed, octahedrally symmetric cage. This confirms that the symmetrised trajectory 
-realises the intended point-group geometry with favourable in-silico metrics on commodity 
+realises the intended point-group geometry with favourable \emph{in silico} metrics on commodity 
 GPUs.\\
 
 Overall, these results indicate that large-assembly protein design can be made feasible 
@@ -296,7 +297,7 @@ Transformer-style attention mechanisms with pari-bias.
 We further showed that strong point-group symmetry constraints can make CP usable 
 \emph{out of the box} for end-to-end all-atom design of large protein nanoparticles 
 without retraining or fine-tuning. Prior work on context-parallelism for structure 
-prediction (e.g., Fold-CP~\cite{lin_fold-cp_2026}) indicates that scaling inference to 
+prediction (e.g., Fold-CP, \cite{lin_fold-cp_2026}) indicates that scaling inference to 
 very large complexes can be limited by out-of-distribution generalisation once inputs exceed 
 the model's native training regime. Our results refine this picture: for highly symmetric 
 assemblies, symmetrised sampling collapses the effective degrees of freedom to a single ASU 
@@ -315,5 +316,5 @@ immediate goal is to design large symmetric assemblies for vaccine applications,
 natural next step for the broader design community.
 
 % as well as experimental validation of the d
-% esigned assemblies to assess how in-silico quality metrics translate to expression, 
+% esigned assemblies to assess how \emph{in silico} quality metrics translate to expression, 
 % stability, and correct self-assembly \emph{in vitro}.

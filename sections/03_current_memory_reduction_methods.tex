@@ -1,8 +1,9 @@
 \chapter{Current Memory Reduction Methods}
 \label{ch:current-memory-reduction-methods}
 
-Recent all-atom generative models such as RFDiffusion 3 (RFD3)~\cite{butcher_novo_2025}, 
-which is inspired by the AlphaFold 3 architecture~\cite{abramsonAccurateStructurePrediction2024} (AF3),
+Recent all-atom generative models such as RFDiffusion~3
+\parencite[RFD3;][]{butcher_novo_2025}, which is inspired by the AlphaFold~3
+(AF3) architecture \parencite{abramsonAccurateStructurePrediction2024},
 can in principle generate multimeric structures such as the symmetric assembly needed as scaffolds
 for nanoparticle vaccines. This is achieved by jointly modelling all chains with
 an atomistic level of precision and designing proteins with predefined point-group 
@@ -34,15 +35,15 @@ parallelism for structure models, because our developed solution
 
 \subsection{IO-efficient attention}
 \label{subsec:io-efficient-attention}
-FlashAttention \cite{dao_flashattention_2022, dao_flashattention-2_2023}
+FlashAttention \parencite{dao_flashattention_2022,dao_flashattention-2_2023}
 computes exact attention with memory linear in sequence length 
 ($\mathcal{O}(I)$ or $\mathcal{O}(L)$ in our notation) by tiling queries, keys, 
 and values into SRAM-resident blocks while maintaining running softmax statistics 
-\citep{milakov_online_2018}, building on the earlier observation that attention 
-admits a linear-memory implementation \citep{rabe_self-attention_2022}. 
+\parencite{milakov_online_2018}, building on the earlier observation that attention 
+admits a linear-memory implementation \parencite{rabe_self-attention_2022}. 
 For architectures without pair representations, this suffices and motivates its 
-use in protein language models like ESM3 \citep{hayesSimulating500Million2025}, which 
-represent sequence, structure, and function as discrete tokens. Flash‑IPA \citep{liu_flash_2025} and FlashBias \citep{wu_flashbias_2025} 
+use in protein language models like ESM3 \parencite{hayesSimulating500Million2025}, which 
+represent sequence, structure, and function as discrete tokens. Flash‑IPA \parencite{liu_flash_2025} and FlashBias \parencite{wu_flashbias_2025} 
 extend this idea to pair‑biased attention, such as the one present in AlphaFold‑3 
 Pairformer, by re-expressing geometric and pairwise bias terms via additional low‑rank 
 features concatenated into the query and key projections. For complex learned pair
@@ -53,24 +54,25 @@ a weight‑preserving drop‑in for an arbitrary pretrained model.
 % while we shard the persistent quadratic activations across devices, and the two could in principle be composed.
 
 \subsection{Distributed parallelism for structure models.} 
-Among the standard parallelism axes (e.g. data, tensor, pipeline), 
+Among the standard parallelism axes (e.g.\ data, tensor, pipeline), 
 \emph{context parallelism} uniquely shards activations along the sequence dimension 
 of every layer, which makes it a natural fit for the $\mathcal{O}(I^2)$ pair tensor 
-of AlphaFold-class models. FastFold \citep{cheng_fastfold_2023} introduced Dynamic 
+of AlphaFold-class models. FastFold \parencite{cheng_fastfold_2023} introduced Dynamic 
 Axial Parallelism (DAP) for AlphaFold~2, replicating parameters on every device and 
 sharding activations along a single sequence axis at a time; 
-ScaleFold \citep{zhu_scalefold_2024} adopted DAP and scaled to 2048 H100s for training. 
+ScaleFold \parencite{zhu_scalefold_2024} adopted DAP and scaled to 2048 H100s for training. 
 As the Evoformer interleaves row- and column-wise attention over the MSA track, 
 DAP must insert an all-to-all communication step whenever the active axis flips, 
 incurring six all-to-all redistributions per Evoformer block at inference, together
 with one \textsc{AllGather} in the outer-product-mean and two in the triangular
-updates~\citep{cheng_fastfold_2023}. These collectives contribute non-trivially 
+updates~\parencite{cheng_fastfold_2023}. These collectives contribute non-trivially 
 to inference latency at scale and increase transient memory relative to the 
 steady-state ($\mathcal{O}(I^2/P)$, where $P$ is the total number of devices) sharded pair representation.
 
-Fold-CP \citep{lin_fold-cp_2026} generalises axis sharding to a full two-dimensional 
-context-parallel strategy for AF3-class models (implementing it for 
-Boltz-2~\citep{passaroBoltz2AccurateEfficient2025}), extending Ring Attention~\citep{liuRingAttentionBlockwise2023} 
+Fold-CP \parencite{lin_fold-cp_2026} generalises axis sharding to a full two-dimensional 
+context-parallel strategy for AF3-class models, implementing it for
+Boltz-2~\parencite{passaroBoltz2AccurateEfficient2025}, and extending Ring
+Attention~\parencite{liuRingAttentionBlockwise2023} 
 into a Cannon-style 2D ring tailored to dense triangular updates, while window-batched
 atom attention is handled by a complementary shardwise kernel that keeps each 
 window's attention local to its rank. The pair tensor is tiled over a 
