@@ -13,13 +13,12 @@ For protein assemblies, $I$ and $L$ grow linearly with the number of chains
 modelled, causing the $\mathcal{O}$($I^{2}$) and $\mathcal{O}$($L^{2}$) self-attention score tensors, pairwise 
 feature tensors, and associated quadratic intermediate computations to exceed the memory capacity 
 of a single GPU when trying to model assemblies of the size relevant for nanoparticle vaccines. 
-This practical bottleneck therefore heavily limits the size of what can be
-designed.
+This bottleneck therefore limits the size of what can be designed.
 
 % This single-device ceiling, however, contrasts with broader trends in 
 % computational infrastructure: while single-device memory capacity has grown only 
 % incrementally, access to multi-GPU clusters is now routine for both academic and 
-% industrial research groups. Accordingly, partitioning large transformer workloads 
+% industrial research groups. Accordingly, partitioning large Transformer workloads 
 % across such clusters has become standard practice in adjacent fields such as large 
 % language modelling, both for training~\cite{li_sequence_2022} and 
 % inference~\cite{pope_efficiently_2022}.
@@ -27,11 +26,11 @@ designed.
 \section{Reducing the cost of attention}
 \label{sec:reducing-attention-cost}
 
-In the literature (especially in the one related to large language models), several strategies have 
-been proposed to reduce the quadratic memory cost of attention. Here we briefly cover 
+Several strategies have been proposed, particularly in the large-language-model
+literature, to reduce the quadratic memory cost of attention. Here we briefly cover 
 IO-efficient attention on a single device, while devoting most of this section to distributed 
-parallelism for structure models, because our developed solution 
-\cref{ch:methods} sits in this realm. 
+parallelism for structure models, because the solution developed in
+\cref{ch:methods} belongs to that family. 
 
 \subsection{IO-efficient attention}
 \label{subsec:io-efficient-attention}
@@ -53,7 +52,7 @@ a weight‑preserving drop‑in for an arbitrary pretrained model.
 % orthogonal to Design-CP: they reduce the per-block memory footprint on a single device, 
 % while we shard the persistent quadratic activations across devices, and the two could in principle be composed.
 
-\subsection{Distributed parallelism for structure models.} 
+\subsection{Distributed parallelism for structure models} 
 Among the standard parallelism axes (e.g.\ data, tensor, pipeline), 
 \emph{context parallelism} uniquely shards activations along the sequence dimension 
 of every layer, which makes it a natural fit for the $\mathcal{O}(I^2)$ pair tensor 
@@ -67,7 +66,7 @@ incurring six all-to-all redistributions per Evoformer block at inference, toget
 with one \textsc{AllGather} in the outer-product-mean and two in the triangular
 updates~\parencite{cheng_fastfold_2023}. These collectives contribute non-trivially 
 to inference latency at scale and increase transient memory relative to the 
-steady-state ($\mathcal{O}(I^2/P)$, where $P$ is the total number of devices) sharded pair representation.
+steady-state $\mathcal{O}(I^2/P)$ (where $P$ is the total number of devices) sharded pair representation.
 
 Fold-CP \parencite{lin_fold-cp_2026} generalises axis sharding to a full two-dimensional 
 context-parallel strategy for AF3-class models, implementing it for
@@ -83,13 +82,13 @@ and outer-product-mean are each reformulated as ring algorithms in which $\mathb
 and $\mathbf{V}$ shards (and, where required, triangular biases and masks) circulate 
 between neighbouring devices while a numerically-stable tiled softmax merges partial 
 outputs without ever materialising the full $I\times I$ attention on any rank. 
-The resulting steady-state pair memory per device is ($\mathcal{O}(I^2/P)$), matching 
+The resulting steady-state pair memory per device is $\mathcal{O}(I^2/P)$, matching 
 1D axis-sharded DAP. However, under 1D sharding, triangular updates typically require 
-collectives over all ($P$) ranks (e.g., to obtain the necessary key/value or bias 
+collectives over all $P$ ranks (e.g.\ to obtain the necessary key/value or bias 
 shards along the active axis), which can inflate the transient working-set memory 
 during attention/multiplication beyond the steady shard. In Fold‑CP’s 2D tiling, 
-collectives are restricted to a single row or column subgroup of size ($\sqrt{P}$). 
+collectives are restricted to a single row or column subgroup of size $\sqrt{P}$. 
 This reduces communication volume and confines the transient working-set memory growth
 in triangular updates (e.g., gathered/circulated K/V shards, triangle biases, masks,
-and other pair-like intermediates) to ($\sqrt{P}$)-sized groups, rather than requiring 
-global ($P$)-way collectives.
+and other pair-like intermediates) to $\sqrt{P}$-sized groups, rather than requiring
+global $P$-way collectives.

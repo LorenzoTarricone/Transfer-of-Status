@@ -13,7 +13,7 @@ lumazine-synthase reference (PDB~1NQX, dotted) shown where applicable.
 
 \section{Metric definitions}
 \label{app:metric-defs}
-\label{app:designability}% alias: Figure~\ref{fig:octahedral} cites the metric
+\label{app:designability}% alias: \cref{fig:octahedral} cites the metric
                          % definitions under this name.
 
 All quantities are computed directly from the generated all-atom coordinates of
@@ -128,9 +128,9 @@ device at any point.
 \section{Icosahedral designs}
 \label{app:ico}
 
-The comparison in Figure~\ref{fig:icosahedral}b--e covers four panels: chain
+The comparison in \cref{fig:icosahedral}b--e covers four panels: chain
 breaks, backbone clashes, non-loop fraction and maximum C$\alpha$ deviation.
-Figure~\ref{fig:ico-perchain} shows the full eight-panel version, adding helix
+\cref{fig:ico-perchain} shows the full eight-panel version, adding helix
 fraction, sheet fraction, glycine content and the average number of
 secondary-structure elements per chain.
 
@@ -145,7 +145,7 @@ $384$-token training crop. The icosahedral problem is therefore strictly harder
 per chain.
 
 \paragraph{Helix and sheet fraction.}
-The most prominent qualitative gap in Figure~\ref{fig:ico-perchain} appears in
+The most prominent qualitative gap in \cref{fig:ico-perchain} appears in
 secondary-structure composition. Vanilla RFD3 monomers reproduce a helix/sheet
 balance close to that of the 1NQX reference: the helix fraction concentrates
 around a median of $\approx 0.47$ with a tight bulk against the 1NQX value of
@@ -179,7 +179,7 @@ outliers) than in the monomers ($\approx 0.05$--$0.10$, very tightly
 concentrated), although the medians remain of the same order and within the
 typical range for natural proteins. The widened glycine spread is qualitatively
 consistent at the population level with the broader maximum
-C$\alpha$--C$\alpha$ deviation of Figure~\ref{fig:icosahedral}e, chains under
+C$\alpha$--C$\alpha$ deviation of \cref{fig:icosahedral}e, chains under
 greater inter-subunit strain relying more on backbone-flexible residues, but we
 flag this as a tentative association rather than a causal claim, since we have
 not tested whether the same chains drive both effects.
@@ -193,7 +193,7 @@ not tested whether the same chains drive both effects.
     ($60$ chains $\times\,210$ residues) and $n{=}40$ vanilla single-GPU RFD3
     monomers of length $210$, with the lumazine-synthase reference (PDB~1NQX)
     dotted in each panel. The first four panels reproduce
-    Figure~\ref{fig:icosahedral}\textbf{b--e}; the additional four (helix
+    \cref{fig:icosahedral}\textbf{b--e}; the additional four (helix
     fraction, sheet fraction, glycine content, average number of
     secondary-structure elements) show the secondary-structure shift discussed
     above.}
@@ -212,7 +212,7 @@ not tested whether the same chains drive both effects.
   \centering
   \includegraphics[width=\textwidth]{Icosahedral_symmetry_metrics_extra.png}
   \caption{Additional symmetry-aware interface metrics for the icosahedral I60
-    designs ($n{=}40$), extending Figure~\ref{fig:icosahedral}\textbf{g--l}.}
+    designs ($n{=}40$), extending \cref{fig:icosahedral}\textbf{g--l}.}
   \label{fig:ico-symm}
 \end{figure}
 
@@ -222,13 +222,13 @@ not tested whether the same chains drive both effects.
 \label{app:oct}
 
 This section collects the material deferred from
-Section~\ref{sec:results-democratization}: the scaling sweep for octahedral
+\cref{sec:results-democratization}: the scaling sweep for octahedral
 targets on workstation-grade hardware, and the metric distributions not shown in
 the main-text figure.
 
 \subsection*{Maximum assembly size on RTX~A4000 GPUs}
 
-The sweep follows the protocol of Section~\ref{sec:results-scaling}: at a fixed
+The sweep follows the protocol of \cref{sec:results-scaling}: at a fixed
 device count we increase the ASU length until inference runs out of memory, and
 record the last feasible length. The only difference is the hardware. Each
 RTX~A4000 provides $16$\,GB of device memory against the
@@ -255,7 +255,7 @@ intermediate device counts on commodity hardware.
 Figures~\ref{fig:oct-des} and~\ref{fig:oct-symm} give the complete distributions
 over the $n{=}12$ octahedral designs for both metric families of
 Section~\ref{app:metric-defs}. The headline panels of
-Figure~\ref{fig:octahedral}b--g are reproduced there; we comment below only on
+\cref{fig:octahedral}b--g are reproduced there; we comment below only on
 the additional panels.
 
 \paragraph{Additional backbone-sanity panels.}
@@ -289,7 +289,7 @@ do contain a weak interface whose contact count drags the per-design minimum
 towards zero, which is a useful filter signal for downstream design campaigns.
 
 Across both families, the additional panels are consistent with the headline
-result of Section~\ref{sec:results-democratization}: octahedral designs sampled
+result of \cref{sec:results-democratization}: octahedral designs sampled
 on commodity GPUs satisfy the same hard-failure criteria as the icosahedral
 baseline, the main qualitative difference being a more permissive
 secondary-structure distribution.
@@ -320,7 +320,7 @@ secondary-structure distribution.
   \caption{Six Design-CP samples at the icosahedral system size ($60$ chains
     $\times\,210$ residues $=12{,}600$ residues) generated \emph{without} a
     point-group symmetry constraint. Compared with the well-formed icosahedral
-    particles of Figure~\ref{fig:icosahedral}, the unconstrained assemblies are
+    particles of \cref{fig:icosahedral}, the unconstrained assemblies are
     malformed and non-globular, illustrating why the symmetry prior is essential in
     this beyond-crop regime.}
   \label{fig:monstromers}

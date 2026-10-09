@@ -1,5 +1,5 @@
 %==============================================================================
-% Chapter 3 -- Methods
+% Chapter 4 -- Methods
 %==============================================================================
 \chapter{Methods}
 \label{ch:methods}
@@ -12,8 +12,8 @@
 % here and cite the appendix.
 % -----------------------------------------------------------------------------
 
-As discussed in Chapter~\ref{ch:current-memory-reduction-methods}, the current barrier for designing
-whole large protein assembly de-novo is a memory problem. An all-atom
+As discussed in \cref{ch:current-memory-reduction-methods}, the current barrier to designing
+whole large protein assemblies \emph{de novo} is a memory problem. An all-atom
 generative model can express a whole assembly, but cannot hold its quadratic
 activations needed for pair-biased attention on one accelerator. This chapter introduces \emph{Design-CP}, two
 context-parallel inference strategies that shard those activations across a
@@ -89,7 +89,7 @@ procedure is set out in Appendix~\ref{app:implementation}.
 
 Our first scheme, implemented in PyTorch with NCCL and without custom kernels or
 \texttt{DTensor} machinery, partitions the query dimension of every $I\times I$
-and $L\times L$ operation across $P$ GPUs (Figure~\ref{fig:large-designs}a, center).
+and $L\times L$ operation across $P$ GPUs (\cref{fig:large-designs}a, centre).
 GPU~$p$ materialises only its row stripe of the pair track:
 %
 \begin{equation}
@@ -149,7 +149,7 @@ Appendix~\ref{app:implementation}.
 \label{sec:cp-2d}
 
 Our second scheme adopts the Fold-CP framework \parencite{lin_fold-cp_2026} and
-specialises it to RFD3 (Figure~\ref{fig:large-designs}a, right). We arrange $P$ GPUs on a
+specialises it to RFD3 (\cref{fig:large-designs}a, right). We arrange $P$ GPUs on a
 $\sqrt{P}\times\sqrt{P}$ grid and tile the pair tensor into local quadrants
 $\mathbf{Z}^{(r,c)}\in\mathbb{R}^{I_r\times I_c\times c_z}$ at grid position
 $(r,c)$, with $I_r=I_c=I/\sqrt{P}$. Queries are sharded along the row axis and
@@ -173,7 +173,7 @@ that devices can be arranged as a $\sqrt{P}\times\sqrt{P}$ mesh.
 % \section{Composition of symmetry with context parallelism}
 % \label{sec:symmetry-cp}
 
-% In both schemes the symmetrisation of Section~\ref{sec:rfd3-prelim} is executed
+% In both schemes the symmetrisation of \cref{sec:rfd3-prelim} is executed
 % redundantly on every rank rather than being distributed: each device applies the
 % point-group operations to full-size coordinates and obtains the same result, so
 % every rank follows an identical sampling trajectory. The two schemes differ in how
@@ -204,7 +204,7 @@ that devices can be arranged as a $\sqrt{P}\times\sqrt{P}$ mesh.
 % This is the operational sense in which the symmetrisation procedure is
 % \emph{orthogonal} to context parallelism, and it is the reason a single set of
 % pretrained weights designs both the unsymmetrised baselines and the icosahedral
-% and octahedral assemblies of Chapter~\ref{ch:results}. Further detail is given in
+% and octahedral assemblies of \cref{ch:results}. Further detail is given in
 % Appendix~\ref{app:implementation}.
 
 \section{In silico evaluation}

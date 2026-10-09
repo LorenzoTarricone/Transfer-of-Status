@@ -11,20 +11,20 @@
 % -----------------------------------------------------------------------------
 
 Having established that whole symmetric assemblies can be modelled end to end
-(Chapters~\ref{ch:methods}--\ref{ch:results}), I now describe the work that
-builds on this. Section~\ref{sec:experimental-validation} concerns experimental
-validation of the designs, Section~\ref{sec:motif-scaffolding} the extension
+(\crefrange{ch:methods}{ch:results}), I now describe the work that
+builds on this. \cref{sec:experimental-validation} concerns experimental
+validation of the designs, \cref{sec:motif-scaffolding} the extension
 from unconditional to symmetric motif scaffolding generation, and
-Section~\ref{sec:shape-control} finer control over assembly shape.
-Section~\ref{sec:broad-agenda} places these in the context of the wider research
-programme, and Section~\ref{sec:gantt} gives the timeline.
+\cref{sec:shape-control} finer control over assembly shape.
+\cref{sec:broad-agenda} places these in the context of the wider research
+programme, and \cref{sec:gantt} gives the timeline.
 
 
 \section{From \emph{in silico} metrics to experimental validation}
 \label{sec:experimental-validation}
 
-The results of Chapter~\ref{ch:results} are entirely computational. The metrics
-of Section~\ref{sec:evaluation} establish that the generated particles are
+The results of \cref{ch:results} are entirely computational. The metrics
+of \cref{sec:evaluation} establish that the generated particles are
 geometrically sound and that their designed interfaces are comparable to those
 of a natural reference particle. They do not establish that a design will
 express solubly, fold, or assemble into the intended cage. The usual substitute,
@@ -39,9 +39,9 @@ I will spend part of the 2026/27 academic year at the Baker Lab, where the relev
 experimental pipeline is well established. The work there will begin with a
 small design campaign: generating a library of assemblies, designing sequences
 with ProteinMPNN \parencite{dauparasRobustDeepLearning2022}, filtering on the
-metrics of Section~\ref{sec:evaluation}, and expressing the candidates that
+metrics of \cref{sec:evaluation}, and expressing the candidates that
 pass those filters. Characterisation would proceed in order of increasing cost (as previously done by \textcite{haas_novo_2026} and coworkers), beginning
-with assays like Immobilized Metal Affinity Chromatograpy (IMAC), Size Exclusion Chromatography (SEC), and chromatography and LC--MS to confirm subunit identity and an elution profile consistent with an assembled particle. These experiments will be followed by negative-stain
+with assays like Immobilised Metal Affinity Chromatography (IMAC), Size Exclusion Chromatography (SEC), and chromatography and LC--MS to confirm subunit identity and an elution profile consistent with an assembled particle. These experiments will be followed by negative-stain
 electron microscopy to assess morphology, and single-particle cryo-EM for the
 most promising candidates. How much of this can be completed within the year
 will depend on expression yields and on the number of designs that clear the
@@ -50,9 +50,9 @@ early filters.
 The campaign would also yield matched computational and experimental outcomes
 for assemblies generated end to end rather than docked from pre-computed
 building blocks, which is not something currently available for this class of
-protiens. Such data would indicate whether the inexpensive geometric filters used
+proteins. Such data would indicate whether the inexpensive geometric filters used
 in this report track successful assembly in practice, and would inform the
-broader programme described in Section~\ref{sec:broad-agenda}.
+broader programme described in \cref{sec:broad-agenda}.
 
 
 \section{From unconditional to conditional generation: symmetric motif scaffolding}
@@ -67,7 +67,7 @@ designs a symmetric scaffold that presents them. In the symmetric setting this i
 \parencite{watsonNovoDesignProtein2023,didiFrameworkConditionalDiffusion2024},
 recently generalised to atom-level motifs without known sequence indices
 \parencite{ahern_atom_2025}, composed with the
-point-group machinery of Section~\ref{sec:rfd3-prelim}, so that a motif placed in
+point-group machinery of \cref{sec:rfd3-prelim}, so that a motif placed in
 one ASU (or at symmetric interface between some ASUs) is presented at every symmetry-equivalent 
 position on the particle. This work will be
 carried out in collaboration with the Baker Lab during a visit there in the next
@@ -79,7 +79,7 @@ pipelines for validating conditionally designed immunogens.
 
 
 Particle radius is already controllable within the framework of
-Chapter~\ref{ch:methods}, but there are other geometric features that a protein designer might want to design for. Two are of
+\cref{ch:methods}, but there are other geometric features that a protein designer might want to design for. Two are of
 particular interest. First, the currently generated assemblies show pores at some interfaces that arise as a by-product of the design rather than as a specified feature. Second, natural capsid subunits frequently possess extended arms that interdigitate with neighbouring subunits, a feature with clear structural
 consequences: the N-terminal arm forms the $\beta$-annulus underlying
 quasi-equivalence in $T{=}3$ plant viruses \parencite{harrison_protein_2017}, and
@@ -118,8 +118,8 @@ allosterically switchable assemblies \parencite{pillai_novo_2024}.
 \section{Timeline and milestones}
 \label{sec:gantt}
 
-Figure~\ref{fig:gantt} summarises the plan on a single timeline: the work
-packages of Sections~\ref{sec:motif-scaffolding}--\ref{sec:broad-agenda}, the
+\cref{fig:gantt} summarises the plan on a single timeline: the work
+packages of \crefrange{sec:motif-scaffolding}{sec:broad-agenda}, the
 papers and conferences they are aimed at, and the two formal milestones of the
 DPhil.
 
