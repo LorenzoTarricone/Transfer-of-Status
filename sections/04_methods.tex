@@ -13,7 +13,7 @@
 % -----------------------------------------------------------------------------
 
 As discussed in Chapter~\ref{ch:current-memory-reduction-methods}, the current barrier for designing
-whole protein assembly de-novo is a memory problem. An all-atom
+whole large protein assembly de-novo is a memory problem. An all-atom
 generative model can express a whole assembly, but cannot hold its quadratic
 activations needed for pair-biased attention on one accelerator. This chapter introduces \emph{Design-CP}, two
 context-parallel inference strategies that shard those activations across a
@@ -28,24 +28,24 @@ differs.
 We build on RFdiffusion3 (RFD3) \parencite{butcher_novo_2025}, an all-atom denoising-diffusion model whose
 diffusion module follows the AlphaFold3 design
 \parencite{abramsonAccurateStructurePrediction2024} and which is
-built on the AtomWorks framework \parencite{corleyAcceleratingBiomolecularModeling2025}. At each denoising step RFD3 jointly represents a
+built on the AtomWorks framework \parencite{corleyAcceleratingBiomolecularModeling2025}. At each denoising step, RFD3 jointly represents a
 structure at two resolutions. A \emph{token} track carries a single
-representation $S \in \mathbb{R}^{I \times c_s}$ and a pair representation
-$Z \in \mathbb{R}^{I \times I \times c_z}$ over $I$ tokens; an \emph{atom} track
-carries a single representation $A \in \mathbb{R}^{L \times c_\text{atom}}$ and a pair representation
-$P \in \mathbb{R}^{L \times L \times c_\text{atompair}}$ over $L$ atoms. Attention
+representation $\mathbf{S} \in \mathbb{R}^{I \times c_s}$ and a pair representation
+$\mathbf{Z} \in \mathbb{R}^{I \times I \times c_z}$ over $I$ tokens; an \emph{atom} track
+carries a single representation $\mathbf{A} \in \mathbb{R}^{L \times c_\text{atom}}$ and a pair representation
+$\mathbf{P} \in \mathbb{R}^{L \times L \times c_\text{atompair}}$ over $L$ atoms. Attention
 on each track adds a learned pair bias to the logits, e.g.
 %
 \begin{equation}
-  \mathrm{Attn}(S) = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}} + B(Z)\right)V,
+  \mathrm{Attn}(\mathbf{S}) = \mathrm{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}} + B(\mathbf{Z})\right)\mathbf{V},
   \label{eq:pair-bias-attn}
 \end{equation}
 %
-where $B(Z) \in \mathbb{R}^{I \times I \times H}$ projects the pair track into a
+where $B(\mathbf{Z}) \in \mathbb{R}^{I \times I \times H}$ projects the pair track into a
 bias for each of the $H$ attention heads. Atom attention can be made \emph{sparse}
 using a $k$-nearest-neighbour neighbourhood with $k \ll L$, so its compute cost is
 $\mathcal{O}(Lk)$ rather than $\mathcal{O}(L^2)$. This is an approximation with respect to 
-how the model was trained (which used the full matrix $P$), and when not used the pair storage $P$
+how the model was trained (which used the full matrix $\mathbf{P}$), and when not used the pair storage $\mathbf{P}$
 remains quadratic in $L$. The single-GPU memory footprint is
 therefore dominated by the $\mathcal{O}(I^2)$ and possibly the $\mathcal{O}(L^2)$ pair tensors,
 which is what limits the size of assembly that can be modelled at once.
@@ -105,8 +105,10 @@ remainder by giving the first $I \bmod P$ ranks one additional row each: rank $p
 receives the extra row precisely when $p < I \bmod P$, which is what the indicator
 encodes. By construction $\sum_{p}I_p = I$, no element is dropped, and chunk sizes
 differ by at most one across GPUs, so the load imbalance per attention block is
-bounded by a single row regardless of $P$. The pair tracks $\mathbf{Z}^{(p)}$ and
-the self-conditioning distogram $\mathbf{D}^{(p)}_\text{self}$ are in this way
+bounded by a single row regardless of $P$. The pair tracks $\mathbf{Z}^{(p)}$ 
+% and the self-conditioning distogram $\mathbf{D}^{(p)}_\text{self}$ 
+are 
+in this way
 \emph{never} gathered to their full $[I,I]$ shape.
 
 Every self-attention block is reformulated as a cross-attention: GPU~$p$ projects
@@ -126,14 +128,17 @@ bias is drawn from the local stripe, $\mathbf{B}^{(p)}=f_B(\mathbf{Z}^{(p)})\in
 A single \textsc{AllGather} over the 1D track reconstructs
 $\mathbf{S}=\bigoplus_{p}\mathbf{S}^{(p)}\in\mathbb{R}^{I\times c_s}$ after each
 block, so that all GPUs hold identical $\mathbf{K}$ and $\mathbf{V}$ for the next
-block. The same partition applies at the atom level. The dense atom pair track is
-striped as $\mathbf{P}^{(p)}\in\mathbb{R}^{L_p\times L\times c_\text{atompair}}$,
-reducing its per-GPU storage from $\mathcal{O}(L^{2})$ to
-$\mathcal{O}(L^{2}/P)$. The sparse $k$-nearest-neighbour attention is then applied
-per shard: each GPU gathers, from its stripe of $\mathbf{P}^{(p)}$, the $k$
-neighbour entries for each of its $L_p$ query atoms, yielding a local bias
-$\mathbf{P}^{(p)}_\text{sparse}\in\mathbb{R}^{L_p\times k\times c_\text{atompair}}$
-at attention-computation cost $\mathcal{O}(L\,k/P)$. At diffusion-step boundaries,
+block. The same row partition applies at the atom level, with GPU~$p$ owning $L_p$
+query atoms. Because the atom track uses sparse $k$-nearest-neighbour attention,
+the dense atom pair track $\mathbf{P}\in\mathbb{R}^{L\times L\times c_\text{atompair}}$
+is never formed, not even as a stripe. Instead, GPU~$p$ computes the pair bias
+only for its own queries and their $k$ neighbours,
+$\mathbf{P}^{(p)}_\text{sparse}\in\mathbb{R}^{L_p\times k\times c_\text{atompair}}$,
+directly from per-atom projections of the atom single track and from the
+token-pair entries of its stripe $\mathbf{Z}^{(p)}$ indexed by the neighbours'
+parent tokens. Memory and attention cost are therefore $\mathcal{O}(L\,k/P)$.
+Neighbour indices are recomputed at every denoising step with a chunked distance
+search that never materialises an $[L,L]$ distance matrix. At diffusion-step boundaries,
 rank~$0$ broadcasts the noised coordinates, sampled Gaussian noise and denoised
 prediction so that all ranks share a single stochastic trajectory. Per-GPU
 pair-track memory is therefore $\mathcal{O}(I^{2}/P)$ for $\mathbf{Z}$ and
@@ -147,10 +152,9 @@ Our second scheme adopts the Fold-CP framework \parencite{lin_fold-cp_2026} and
 specialises it to RFD3 (Figure~\ref{fig:large-designs}a, right). We arrange $P$ GPUs on a
 $\sqrt{P}\times\sqrt{P}$ grid and tile the pair tensor into local quadrants
 $\mathbf{Z}^{(r,c)}\in\mathbb{R}^{I_r\times I_c\times c_z}$ at grid position
-$(r,c)$, with $I_r=I/\sqrt{P}$. Queries are sharded along the row axis and
+$(r,c)$, with $I_r=I_c=I/\sqrt{P}$. Queries are sharded along the row axis and
 replicated along the column axis; keys and values are sharded along the column
-axis and circulated by $\sqrt{P}$ ring shifts, with an initial
-$(r,c)\leftrightarrow(c,r)$ transpose to align them with the query rows. At each
+axis and circulated by $\sqrt{P}$ ring shifts. At each
 ring step, a GPU computes attention between its resident $\mathbf{Q}$ rows and the
 currently visited $\mathbf{K}$/$\mathbf{V}$ shard, using the local bias quadrant,
 and merges the partial output into a running total via an online softmax
@@ -161,14 +165,7 @@ Asymptotically, per-device pair-track memory is $\mathcal{O}(I^{2}/P)$, the same
 as the 1D scheme, while $\mathbf{K}$ and $\mathbf{V}$ are ring-rotated rather than
 replicated, so each device only ever holds an $\mathcal{O}(I/\sqrt{P})$ slab of
 $\mathbf{K}$/$\mathbf{V}$ at a time. The $\sqrt{P}$ ring shifts per attention block
-are overlapped with local computation.
-
-Relative to Fold-CP, the RFD3 adaptation mainly concerns the sampling loop and the
-atom-level path: the ring primitive is invoked inside every recycling iteration of
-every denoising step, with rank-$0$ broadcasts at step boundaries that mirror the
-1D scheme, and the sparse atom attention requires a distributed $k$-nearest-neighbour
-search that avoids materialising any $[L,L]$ distance tensor. Concrete descriptions
-of these adaptations are deferred to Appendix~\ref{app:implementation}. This 2D
+are overlapped with local computation. This 2D
 grid scheme applies only when the available GPU count $P$ is a perfect square, so
 that devices can be arranged as a $\sqrt{P}\times\sqrt{P}$ mesh.
 

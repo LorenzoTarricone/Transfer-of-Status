@@ -85,6 +85,11 @@
             giveninits=true,uniquename=false,sorting=nyt,natbib=true]{biblatex}
 \addbibresource{references.bib}
 
+% Don't print access dates like "visited on ..." in the bibliography.
+% (Some styles print this via the url+urldate macro, so we disable it there too.)
+\AtEveryBibitem{\clearfield{urldate}}
+\renewbibmacro*{url+urldate}{\printfield{url}}
+
 %==============================================================================
 \begin{document}
 

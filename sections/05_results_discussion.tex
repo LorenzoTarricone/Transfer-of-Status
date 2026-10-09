@@ -12,14 +12,14 @@ commodity hardware. We close with a discussion of its limitations.
 \section{Design quality and symmetry}
 \label{sec:design-quality}
 
-Context parallelism is applied as an \emph{inference-only} modification: it
+Context parallelism is applied here as an \emph{inference-only} modification: it
 changes how intermediate activations are partitioned and communicated, but does
 not alter the learned parameters of RFD3. This makes it immediately applicable to
 pretrained checkpoints, but it also means that when context parallelism is used to
 exceed RFD3's native crop limits, the model is sampled outside the regime it was
-trained on ($384$ tokens and $5{,}000$ atoms
+trained on ($384$ tokens and $5{,}000$ atoms according to the SI of
 \parencite{butcher_novo_2025}). In practice, we find that this distribution shift
-can degrade sample quality when the target displays limited symmetry.
+can degrade sample quality when the target displays limited.
 
 Figure~\ref{fig:large-designs}b illustrates the effect qualitatively: when the
 number of atoms and tokens modelled is much higher than RFD3 saw during training,
@@ -54,7 +54,7 @@ This motivates the use of context parallelism for the design of highly symmetric
 protein assemblies such as octahedral and icosahedral capsids and cages. Context
 parallelism allows the model to consider, and remain self-consistent with respect
 to, the full set of residue and atom interactions in the assembly, while the
-symmetry prior ensures that the number of \emph{free} coordinates the sampler must
+symmetry prior ensures that the number of free coordinates the sampler must
 generate is that of a single ASU, allowing the use of pre-trained weights.
 We turn to these targets next, as they are also our interest for nanoparticle vaccine design.
 
@@ -252,7 +252,7 @@ interface centres around $\approx 30$ with a positive tail beyond $60$. An examp
 octahedral design is provided in \cref{fig:octahedral}a, where the chains organise 
 into a closed, octahedrally symmetric cage. This confirms that the symmetrised trajectory 
 realises the intended point-group geometry with favourable in-silico metrics on commodity 
-GPUs.
+GPUs.\\
 
 Overall, these results indicate that large-assembly protein design can be made feasible 
 on modest, widely available GPU hardware, lowering the barrier to entry for groups without 
@@ -310,7 +310,7 @@ a practical path towards democratising large-assembly protein design.
 A key limitation is that pushing beyond the native training crop can still introduce 
 distribution shift and degrade outputs for highly asymmetric targets. Future work could 
 therefore explore training or fine-tuning design models with longer contexts and/or explicit 
-context-parallelism in the training loop. This is now not a priorit for this project, as our
+context-parallelism in the training loop. This is now not a priority for this project, as our
 immediate goal is to design large symmetric assemblies for vaccine applications, but it is a 
 natural next step for the broader design community.
 

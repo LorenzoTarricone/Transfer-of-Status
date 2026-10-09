@@ -40,9 +40,8 @@ experimental pipeline is well established. The work there will begin with a
 small design campaign: generating a library of assemblies, designing sequences
 with ProteinMPNN \parencite{dauparasRobustDeepLearning2022}, filtering on the
 metrics of Section~\ref{sec:evaluation}, and expressing the candidates that
-survive. Characterisation would proceed in order of increasing cost, beginning
-with chromatography and LC--MS to confirm subunit identity and an elution
-profile consistent with an assembled particle, followed by negative-stain
+pass those filters. Characterisation would proceed in order of increasing cost (as previously done by \cite{haas_novo_2026} and coworkers), beginning
+with assays like Immobilized Metal Affinity Chromatograpy (IMAC), Size Exclusion Chromatography (SEC), and chromatography and LC--MS to confirm subunit identity and an elution profile consistent with an assembled particle. These experiments will be followed by negative-stain
 electron microscopy to assess morphology, and single-particle cryo-EM for the
 most promising candidates. How much of this can be completed within the year
 will depend on expression yields and on the number of designs that clear the
@@ -80,16 +79,13 @@ pipelines for validating conditionally designed immunogens.
 
 
 Particle radius is already controllable within the framework of
-Chapter~\ref{ch:methods}, but finer geometric features are not. Two are of
-particular interest. First, the generated assemblies show pores at some
-interfaces that arise as a by-product of the design rather than as a specified
-feature. Second, natural capsid subunits frequently possess extended arms that
-interdigitate with neighbouring subunits, a feature with clear structural
+Chapter~\ref{ch:methods}, but there are other geometric features that a protein designer might want to design for. Two are of
+particular interest. First, the currently generated assemblies show pores at some interfaces that arise as a by-product of the design rather than as a specified feature. Second, natural capsid subunits frequently possess extended arms that interdigitate with neighbouring subunits, a feature with clear structural
 consequences: the N-terminal arm forms the $\beta$-annulus underlying
 quasi-equivalence in $T{=}3$ plant viruses \parencite{harrison_protein_2017}, and
 C-terminal arm exchange allows papillomavirus and polyomavirus pentamers to
 occupy hexavalent positions in a $T{=}7$ lattice
-\parencite{liddington_structure_1991}. Since the training distribution is dominated
+\parencite{liddingtonStructureSimianVirus1991}. Since the training distribution is dominated
 by globular monomers, such subunits fall outside what the model readily
 produces.
 
@@ -165,8 +161,8 @@ DPhil.
     \ganttbar{Experimental (in-vitro) validation}{3}{5} \\
     % --- Conditional generation ---
     \ganttgroup{Conditional generation}{3}{8} \\
-    \ganttbar{Symmetric motif scaffolding\\(Baker Lab visit)}{3}{6} \\
-    \ganttbar{Test on real antigens\\(Baker Lab visit)}{6}{8} \\
+    \ganttbar{Symmetric motif scaffolding}{3}{6} \\
+    \ganttbar{Test on real antigens}{6}{8} \\
     % --- Shape / spatial control ---
     \ganttgroup{Shape \& spatial control}{1}{4} \\
     \ganttbar{Improve spatial/shape\\conditioning}{1}{4} \\

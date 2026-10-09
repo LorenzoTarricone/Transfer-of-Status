@@ -1,7 +1,7 @@
 \chapter{Current Memory Reduction Methods}
 \label{ch:current-memory-reduction-methods}
 
-Recent all-atom generative models such as RFDiffusion 3~\cite{butcher_novo_2025} (RFD3), 
+Recent all-atom generative models such as RFDiffusion 3 (RFD3)~\cite{butcher_novo_2025}, 
 which is inspired by the AlphaFold 3 architecture~\cite{abramsonAccurateStructurePrediction2024} (AF3),
 can in principle generate multimeric structures such as the symmetric assembly needed as scaffolds
 for nanoparticle vaccines. This is achieved by jointly modelling all chains with
@@ -9,8 +9,8 @@ an atomistic level of precision and designing proteins with predefined point-gro
 symmetries. However, the underlying architecture maintains pairwise representations 
 whose memory cost scales quadratically with the number of tokens~$I$ (and atoms~$L$). 
 For protein assemblies, $I$ and $L$ grow linearly with the number of chains
-modelled, causing the $\mathcal{O}$($I^{2}$) and $\mathcal{O}$($L^{2}$) pairwise 
-feature tensors and related quadratic intermediates to exceed the memory capacity 
+modelled, causing the $\mathcal{O}$($I^{2}$) and $\mathcal{O}$($L^{2}$) self-attention score tensors, pairwise 
+feature tensors, and associated quadratic intermediate computations to exceed the memory capacity 
 of a single GPU when trying to model assemblies of the size relevant for nanoparticle vaccines. 
 This practical bottleneck therefore heavily limits the size of what can be
 designed.
@@ -27,9 +27,9 @@ designed.
 \label{sec:reducing-attention-cost}
 
 In the literature (especially in the one related to large language models), several strategies have 
-been proposed to reduce the memory cost of attention. Here we briefly cover 
-IO-efficient attention on a single device, while devoting most of this sec-
-tion to distributed parallelism for structure models, because our developed solution 
+been proposed to reduce the quadratic memory cost of attention. Here we briefly cover 
+IO-efficient attention on a single device, while devoting most of this section to distributed 
+parallelism for structure models, because our developed solution 
 \cref{ch:methods} sits in this realm. 
 
 \subsection{IO-efficient attention}
@@ -42,9 +42,7 @@ and values into SRAM-resident blocks while maintaining running softmax statistic
 admits a linear-memory implementation \citep{rabe_self-attention_2022}. 
 For architectures without pair representations, this suffices and motivates its 
 use in protein language models like ESM3 \citep{hayesSimulating500Million2025}, which 
-represent sequence, structure, and function as discrete tokens and condense 
-pairwise geometry into a single SE(3)-invariant geometric-attention block at 
-the input. Flash‑IPA \citep{liu_flash_2025} and FlashBias \citep{wu_flashbias_2025} 
+represent sequence, structure, and function as discrete tokens. Flash‑IPA \citep{liu_flash_2025} and FlashBias \citep{wu_flashbias_2025} 
 extend this idea to pair‑biased attention, such as the one present in AlphaFold‑3 
 Pairformer, by re-expressing geometric and pairwise bias terms via additional low‑rank 
 features concatenated into the query and key projections. For complex learned pair
@@ -55,7 +53,7 @@ a weight‑preserving drop‑in for an arbitrary pretrained model.
 % while we shard the persistent quadratic activations across devices, and the two could in principle be composed.
 
 \subsection{Distributed parallelism for structure models.} 
-Among the standard parallelism axes (data, tensor, pipeline, expert, activation), 
+Among the standard parallelism axes (e.g. data, tensor, pipeline), 
 \emph{context parallelism} uniquely shards activations along the sequence dimension 
 of every layer, which makes it a natural fit for the $\mathcal{O}(I^2)$ pair tensor 
 of AlphaFold-class models. FastFold \citep{cheng_fastfold_2023} introduced Dynamic 

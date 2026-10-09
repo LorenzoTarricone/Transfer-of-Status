@@ -21,8 +21,8 @@ drawn first from structural biology and then from machine learning.
 
 A protein is a linear polymer of amino acids. Every residue contributes the same
 backbone unit (N, C$\alpha$, C) and one of twenty side chains, so proteins differ
-from one another in the lenght of the chain and the order of those side chains along
-the chain, known as the \emph{sequence}. In a given environment the sequence largely determines the
+from one another in the length of the chain(s) and the order of those side chains along
+the chain, known as the \emph{sequence}. In a given environment, the sequence largely determines the
 three-dimensional structure that the chain adopts
 \parencite{anfinsenPrinciplesThatGovern1973}. That structure is conventionally described
 at four levels (Figure~\ref{fig:protein-structure}). The sequence itself is the
@@ -51,11 +51,11 @@ the \emph{asymmetric subunit} (ASU). The point groups that close into a finite
 assembly are the cyclic groups $C_n$, the dihedral groups $D_n$ and the three
 polyhedral groups: tetrahedral $T$, octahedral $O$ and icosahedral $I$, of order
 $12$, $24$ and $60$ respectively (Figure~\ref{fig:symmetries}). The order of the
-group fixes how many copies of the ASU the protein contains. Helical symmetry,
+group fixes how many copies of the ASU the protein contains. Helical symmetry
 is the one case that does not close: it repeats the
 subunit along a screw axis to give an open filament rather than a bounded
 assembly. For all these classes of symmetric proteins, the chains within an 
-ASU need not be identical. Where the ASU is a single chain the assembly is a symmetric
+ASU need not be identical. Where the ASU is a single chain, the assembly is a symmetric
 homo-oligomer, but placing two or more distinct chains in the ASU gives a
 multi-component assembly.
 
@@ -80,9 +80,9 @@ multi-component assembly.
 \label{sec:pnp-vaccines}
 
 The clinical success of mRNA vaccines during the SARS-CoV-2 pandemic
-\parencite{polackSafetyEfficacyBNT162b22020} established nucleic-acid delivery as a fast,
-programmable vaccine modality: manufacture is sequence-independent and scalable
-\parencite{pardiMRNAVaccinesNew2018}, and clinical-grade material for mRNA-1273 entered
+\parencite{polackSafetyEfficacyBNT162b22020} established nucleic-acid delivery as a fast and 
+programmable vaccine modality. Manufacture is sequence-independent and scalable
+\parencite{pardiMRNAVaccinesNew2018}, and clinical-grade material for mRNA-1273 (COVID vaccine by Moderna) entered
 production five days after the SARS-CoV-2 sequence was released, reaching a
 phase~1 trial 66 days later \parencite{corbettSARSCoV2MRNAVaccine2020}. This platform 
 has, however, innately limited immunogenicity. An antigen presented as a
@@ -97,13 +97,13 @@ nanoparticle}, in many copies and in a dense, repetitive, virus-like geometry
 Designed nanoparticle vaccines of this kind have elicited neutralising-antibody
 responses roughly an order of magnitude stronger than the corresponding soluble
 antigen, both for SARS-CoV-2
-\parencite{walls_elicitation_2020} and for respiratory syncytial virus
+\parencite{walls_elicitation_2020} and for respiratory syncytial virus (RSV)
 \parencite{marcandalliInductionPotentNeutralizing2019a}; in the SARS-CoV-2 case
-the titres were still undiminished twenty weeks after the boost. Natural and engineered self-assembling
+the titres were still undiminished twenty weeks after the boost. Naturally occurring self-assembling
 symmetric protein scaffolds such as lumazine synthase provide versatile platforms for multivalent,
 cross-protective antigen presentation
 \parencite{ladenstein_second_2020,joseph_lumazine_2025}, and self-assembling
-protein nanoparticles are now engineered both for therapeutic delivery
+protein nanoparticles have been engineered both for therapeutic delivery
 \parencite{olshefskyEngineeringSelfAssemblingProtein2022} and as modular nanocages that
 display antibodies and Fc fusions at controlled valency, a format that enhances
 receptor agonism and viral neutralisation \parencite{divine_designed_2021}.\\
@@ -174,44 +174,43 @@ surface that evolved for something else.
 \subsection{The machine-learning revolution in de novo design}
 \label{subsec:ml-design}
 
-The accuracy revolution in protein \emph{structure prediction} that includes AlphaFold2
+The accuracy revolution in protein structure prediction that includes AlphaFold2
 \parencite{jumperHighlyAccurateProtein2021}, RoseTTAFold
 \parencite{baekAccuratePredictionProtein2021} and, more recently, the all-atom
 biomolecular model AlphaFold3 \parencite{abramsonAccurateStructurePrediction2024} 
 transformed what is computationally tractable, and it was quickly followed by an
-analogous revolution in \emph{generative} design. Deep generative models now 
+analogous revolution in generative design. Deep generative models now 
 propose novel structures directly. Denoising-based
 design frameworks including RFdiffusion \parencite{watsonNovoDesignProtein2023},
 Chroma \parencite{ingrahamIlluminatingProteinSpace2023} and Genie
 \parencite{lin_generating_2023,lin_out_2024,linFastUltraCapableProtein2026},
 together with the flow-based Proteina \parencite{geffner_proteina_2025} and many other
 such models, enable the de novo creation of proteins with prescribed structural and functional
-properties. Some of these methods (especually the earlier ones) generate a backbone
+properties. Some of these methods (especially the earlier ones) generate a backbone
 alone, and their sequences are supplied by a
 learned inverse-folding model such as ProteinMPNN
 \parencite{dauparasRobustDeepLearning2022}. The recent RFdiffusion3 
 \parencite{butcher_novo_2025}, on which this work builds, is one of the most recent models that generates every atom.
 
 These advances have already yielded a tangible impact across diverse application domains.
-In therapeutic design alone, examples include de novo minibinders against therapeutically 
-relevant targets such as bioactive peptide hormones~\cite{vazquez_torres_novo_2024} 
-and bacterial toxins~\cite{ragotte_novo_2025} as well as the de novo design of 
+In therapeutic design alone, examples include de novo minibinders against therapeutically relevant targets such as bioactive peptide hormones~\parencite{vazquez_torres_novo_2024} 
+and bacterial toxins~\parencite{ragotte_novo_2025} as well as the de novo design of 
 epitope-targeted antibodies, from diffusion-based co-design of CDR sequence and structure on a fixed
-framework~\cite{luo_antigen-specific_2022} to atomically accurate
-in-silico design of VHHs and scFvs~\cite{bennett_atomically_2026}. \\
+framework~\parencite{luo_antigen-specific_2022} to atomically accurate
+in-silico design of VHHs and scFvs~\parencite{bennett_atomically_2026}. \\
 
 
 \subsection{Transformers and attention}
 \label{subsec:transformers}
 
-The architecure of all the most uses protein structure prediction and design models is based on 
+The architecture of most protein structure prediction and design models is based on 
 a common architectural module, called \emph{transformer}. A transformer 
 \parencite{vaswaniAttentionAllYou2017} is a neural network composed of
 repeated blocks. It operates on a sequence of $n$ \emph{tokens}, each carrying a
 feature vector of width $d$. To give an example, in the models used in this
-report a token corresponds to an amino acid or an atom.
+report, a token corresponds to an amino acid or an atom.
 
-The original architecture stacks two kinds of block. An encoder block holds a
+The original transformer architecture stacks two kinds of blocks. An encoder block holds a
 self-attention sub-layer followed by a token-wise feed-forward sub-layer. A
 decoder block adds a third sub-layer, which uses the encoder output, and
 masks its own self-attention so that a position cannot attend to later ones along the sequence.
@@ -236,7 +235,7 @@ have expanded the same basic structure of the encoder block here described.
   \label{fig:transformer}
 \end{figure}
 
-A block therefore updates each token with a revised feature vector. The attention 
+Another way to look at the encoder block is as a module that updates each token with a revised feature vector. The attention 
 mechanism allows each token to consider the context provided by all other tokens 
 in the sequence for this update. The update applied to one
 token is a learned, weighted combination of contributions from every other token,
@@ -247,7 +246,7 @@ connection and the normalisation likewise act on one token at a time; attention
 is therefore the only operation in the block through which tokens explicitly exchange
 information.
 
-Figure~\ref{fig:attention} sets out the attention mechanism for a single head. After collecting the
+Figure~\ref{fig:attention} sets out the (self) attention mechanism for a single head. After collecting the
 input tokens as the rows of $X \in \mathbb{R}^{n \times d}$, three learned
 projections turn each token into a query, a key and a value,
 %
