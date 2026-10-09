@@ -247,29 +247,29 @@ is therefore the only operation in the block through which tokens explicitly exc
 information.
 
 Figure~\ref{fig:attention} sets out the (self) attention mechanism for a single head. After collecting the
-input tokens as the rows of $X \in \mathbb{R}^{n \times d}$, three learned
+input tokens as the rows of $\mathbf{X} \in \mathbb{R}^{n \times d}$, three learned
 projections turn each token into a query, a key and a value,
 %
 \[
-  Q = X W_Q^{\top}, \qquad K = X W_K^{\top}, \qquad V = X W_V^{\top},
+  \mathbf{Q} = \mathbf{X} \mathbf{W}_Q^{\top}, \qquad \mathbf{K} = \mathbf{X} \mathbf{W}_K^{\top}, \qquad \mathbf{V} = \mathbf{X} \mathbf{W}_V^{\top},
 \]
 %
-with $Q, K \in \mathbb{R}^{n \times d_k}$ and $V \in \mathbb{R}^{n \times
+with $\mathbf{Q}, \mathbf{K} \in \mathbb{R}^{n \times d_k}$ and $\mathbf{V} \in \mathbb{R}^{n \times
 d_v}$. Every query is scored against every key, and a row-wise softmax turns
 those scores into the attention matrix
 %
 \[
-  A = \mathrm{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)
+  \mathbf{A} = \mathrm{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}}\right)
   \in \mathbb{R}^{n \times n},
 \]
 %
 whose $i$th row holds the weights that token $i$ assigns to each token in the
 set. Dividing by $\sqrt{d_k}$ keeps the scores in a range where the softmax does
-not saturate. The output of the head is $E = AV$: every token is replaced by a
+not saturate. The output of the head is $\mathbf{E} = \mathbf{A}\mathbf{V}$: every token is replaced by a
 weighted average of the values, the weights being those learned scores. Several
 such \emph{heads} can operate in parallel on different projections of the same
 input (not shown in the image); their outputs are concatenated and mapped back to width $d$ by a further
-learned projection ($O = EW^T_o$), and the result enters the residual connection ($x' = x+O$) and the
+learned projection ($\mathbf{O} = \mathbf{E}\mathbf{W}_o^{\top}$), and the result enters the residual connection ($\mathbf{x}' = \mathbf{x}+\mathbf{O}$) and the
 normalisation described above.
 
 \begin{figure}[t] %TODO: change Z to J in image 
