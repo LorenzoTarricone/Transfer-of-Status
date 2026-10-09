@@ -265,11 +265,11 @@ those scores into the attention matrix
 %
 whose $i$th row holds the weights that token $i$ assigns to each token in the
 set. Dividing by $\sqrt{d_k}$ keeps the scores in a range where the softmax does
-not saturate. The output of the head is $O = AV$: every token is replaced by a
+not saturate. The output of the head is $E = AV$: every token is replaced by a
 weighted average of the values, the weights being those learned scores. Several
 such \emph{heads} can operate in parallel on different projections of the same
 input (not shown in the image); their outputs are concatenated and mapped back to width $d$ by a further
-learned projection, and the result enters the residual connection and the
+learned projection ($O = EW^T_o$), and the result enters the residual connection ($x' = x+O$) and the
 normalisation described above.
 
 \begin{figure}[t] %TODO: change Z to J in image 
